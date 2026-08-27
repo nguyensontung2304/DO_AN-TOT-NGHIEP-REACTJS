@@ -1,3 +1,8 @@
+import axios from "axios";
+import { useEffect, useCallback } from "react";
+import { useDispatch } from "react-redux";
+import { setUser, clearUser } from "./redux/userSlice";
+
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 
 // ====================
@@ -15,6 +20,7 @@ import LoginAdmin from "./pages/public/LoginAdmin/LoginAdmin";
 import LoginUser from "./pages/public/LoginUser/LoginUser";
 import Register from "./pages/public/Register/Register";
 import ProductDetail from "./pages/public/ProductDetail/ProductDetail";
+import Profile from "./pages/public/Profile/Profile";
 
 // ====================
 // ADMIN LAYOUT
@@ -30,13 +36,52 @@ import Factory from "./pages/admin/Factory/Factory";
 import FinishedGoods from "./pages/admin/FinishedGoods/FinishedGoods";
 
 function App() {
+  const dispatch = useDispatch();
+
+  const getUser = useCallback(async () => {
+    try {
+      const userId = JSON.parse(localStorage.getItem("userId"));
+
+      if (!userId) {
+        dispatch(clearUser());
+        return;
+      }
+
+      const response = await axios.get(
+        `http://localhost:5000/users/login/${userId}`,
+      );
+
+      const user = response.data.user;
+
+      dispatch(setUser(user));
+    } catch (error) {
+      console.log("Lỗi lấy thông tin user:", error);
+      dispatch(clearUser());
+    }
+  }, [dispatch]);
+
+  useEffect(() => {
+    getUser();
+  }, [getUser]);
+
+  useEffect(() => {
+    const handleUserChanged = () => {
+      getUser();
+    };
+
+    window.addEventListener("userChanged", handleUserChanged);
+
+    return () => {
+      window.removeEventListener("userChanged", handleUserChanged);
+    };
+  }, [getUser]);
+
   return (
     <BrowserRouter>
       <Routes>
         {/* ==================== */}
         {/* PUBLIC */}
         {/* ==================== */}
-
         <Route
           path="/"
           element={
@@ -110,6 +155,15 @@ function App() {
         />
 
         <Route
+          path="/profile"
+          element={
+            <PublicLayout>
+              <Profile />
+            </PublicLayout>
+          }
+        />
+
+        <Route
           path="/products/:id"
           element={
             <PublicLayout>
@@ -121,7 +175,6 @@ function App() {
         {/* ==================== */}
         {/* ADMIN */}
         {/* ==================== */}
-
         <Route
           path="/admin"
           element={

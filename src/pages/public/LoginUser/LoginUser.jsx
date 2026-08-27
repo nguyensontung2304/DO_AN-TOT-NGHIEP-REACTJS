@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
+import { useSelector } from "react-redux";
 import axios from "axios";
 import "./LoginUser.scss";
 
@@ -9,17 +10,17 @@ export default function LoginUser() {
   const navigate = useNavigate();
   const location = useLocation();
   const from = location.state?.from || "/";
+  const currentUser = useSelector((state) => state.user.currentUser);
 
   const [form, setForm] = useState({ email: "", password: "" });
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    const user = JSON.parse(localStorage.getItem("user"));
-    if (user?.id) {
+    if (currentUser?.id) {
       navigate(from, { replace: true });
     }
-  }, [from, navigate]);
+  }, [currentUser?.id, from, navigate]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -34,9 +35,7 @@ export default function LoginUser() {
 
       const user = response.data.user;
 
-      console.log(user);
-
-      localStorage.setItem("user", JSON.stringify(user));
+      localStorage.setItem("userId", JSON.stringify(user.id));
 
       window.dispatchEvent(new Event("userChanged"));
 

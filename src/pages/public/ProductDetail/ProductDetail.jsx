@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 
 import { useParams, Link, useNavigate } from "react-router-dom";
-
+import { useSelector } from "react-redux";
 import axios from "axios";
 
 import "./productDetail.scss";
@@ -21,7 +21,7 @@ export default function ProductDetail() {
 
   const [qty, setQty] = useState(1);
 
-  const user = JSON.parse(localStorage.getItem("user"));
+  const currentUser = useSelector((state) => state.user.currentUser);
 
   // ======================
   // LẤY CHI TIẾT SẢN PHẨM
@@ -71,10 +71,6 @@ export default function ProductDetail() {
   // THÊM VÀO GIỎ HÀNG
   // ======================
   const handleAddToCart = async () => {
-    const currentUser = JSON.parse(localStorage.getItem("user"));
-
-    // Chưa login
-
     if (!currentUser?.id) {
       navigate("/login-user", {
         state: {
@@ -297,7 +293,7 @@ export default function ProductDetail() {
 
             {/* Thêm giỏ */}
 
-            {user ? (
+            {currentUser ? (
               <button
                 className="pd-btn pd-btn--primary pd-btn--add"
                 onClick={handleAddToCart}
@@ -319,7 +315,7 @@ export default function ProductDetail() {
 
           {/* Mua ngay */}
 
-          {user && (
+          {currentUser && (
             <button className="pd-btn pd-btn--buy-now" onClick={handleBuyNow}>
               ⚡ Mua ngay
             </button>

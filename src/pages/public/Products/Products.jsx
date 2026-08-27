@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 
 import { Link } from "react-router-dom";
-
+import { useSelector } from "react-redux";
 import axios from "axios";
 
 import "./products.scss";
@@ -10,7 +10,7 @@ import "./products.scss";
 // PRODUCT CARD
 // ======================
 function ProductCard({ product }) {
-  const [user] = useState(JSON.parse(localStorage.getItem("user")));
+  const currentUser = useSelector((state) => state.user.currentUser);
 
   const [added, setAdded] = useState(false);
 
@@ -18,16 +18,14 @@ function ProductCard({ product }) {
   // THÊM GIỎ HÀNG
   // ======================
   const handleAdd = async () => {
-    const user = JSON.parse(localStorage.getItem("user"));
-
-    if (!user?.id) {
+    if (!currentUser?.id) {
       window.location.href = "/login-user";
       return;
     }
 
     try {
       await axios.post("http://localhost:5000/cart", {
-        userId: user.id,
+        userId: currentUser.id,
         productId: product.id,
         qty: 1,
       });
@@ -104,7 +102,7 @@ function ProductCard({ product }) {
             Chi tiết
           </Link>
 
-          {user ? (
+          {currentUser ? (
             <button
               className={`product-card__btn ${
                 added ? "product-card__btn--added" : ""

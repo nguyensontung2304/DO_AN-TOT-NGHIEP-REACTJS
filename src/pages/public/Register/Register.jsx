@@ -10,8 +10,6 @@ export default function Register() {
 
   const [form, setForm] = useState({
     name: "",
-    phone: "",
-    address: "",
     email: "",
     password: "",
     confirm: "",
@@ -33,20 +31,14 @@ export default function Register() {
     try {
       setLoading(true);
 
-      const response = await axios.post(
-        `${API_BASE_URL}/users/register`,
-        {
-          name: form.name,
-          phone: form.phone,
-          address: form.address,
-          email: form.email,
-          password: form.password,
-        },
-      );
+      const response = await axios.post(`${API_BASE_URL}/users/register`, {
+        name: form.name,
+        email: form.email,
+        password: form.password,
+      });
 
       const user = response.data.user;
-
-      localStorage.setItem("user", JSON.stringify(user));
+      console.log(user);
 
       window.dispatchEvent(new Event("userChanged"));
 
@@ -81,32 +73,6 @@ export default function Register() {
               onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
               placeholder="Nguyễn Sơn Tùng"
               autoFocus
-              required
-            />
-          </div>
-
-          <div className="form-group">
-            <label>Số điện thoại</label>
-            <input
-              type="text"
-              value={form.phone}
-              onChange={(e) =>
-                setForm((f) => ({ ...f, phone: e.target.value }))
-              }
-              placeholder="0795789458"
-              required
-            />
-          </div>
-
-          <div className="form-group">
-            <label>Địa chỉ</label>
-            <input
-              type="text"
-              value={form.address}
-              onChange={(e) =>
-                setForm((f) => ({ ...f, address: e.target.value }))
-              }
-              placeholder="K34/16 Đường Bắc Đẩu, Quận Hải Châu, Thành Phố Đà Nẵng "
               required
             />
           </div>

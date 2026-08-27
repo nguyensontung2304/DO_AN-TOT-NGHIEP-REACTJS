@@ -1,6 +1,6 @@
 import { useState } from "react";
 import "./contact.scss";
-import Map from "../../../components/map/map";
+import Map from "../map/map";
 
 export default function Contact() {
   const [form, setForm] = useState({

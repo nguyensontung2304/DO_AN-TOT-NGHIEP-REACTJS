@@ -1,30 +1,43 @@
+/* eslint-disable react-hooks/set-state-in-effect */
 import { useEffect, useState, useCallback } from "react";
 
 import { Link, useNavigate } from "react-router-dom";
-
+import { useSelector } from "react-redux";
 import axios from "axios";
 
 import "./cart.scss";
 
 export default function Cart() {
   const navigate = useNavigate();
+  const currentUser = useSelector((state) => state.user.currentUser);
 
   const [cart, setCart] = useState([]);
-
   const [loading, setLoading] = useState(true);
-
   const [step, setStep] = useState("cart");
-
   const [form, setForm] = useState({
     note: "",
+    name: currentUser?.name || "",
+    phone: currentUser?.phone || "",
+    address: currentUser?.address || "",
   });
 
-  const [user, setUser] = useState(() =>
-    JSON.parse(localStorage.getItem("user")),
-  );
+  const updateForm = (field, value) => {
+    setForm((prev) => ({ ...prev, [field]: value }));
+  };
+
+  useEffect(() => {
+    if (currentUser) {
+      setForm((prev) => ({
+        ...prev,
+        name: currentUser.name || prev.name,
+        phone: currentUser.phone || prev.phone,
+        address: currentUser.address || prev.address,
+      }));
+    }
+  }, [currentUser]);
 
   const getCart = useCallback(async () => {
-    if (!user?.id) {
+    if (!currentUser?.id) {
       setCart([]);
       setLoading(false);
       return;
@@ -33,7 +46,9 @@ export default function Cart() {
     try {
       setLoading(true);
 
-      const response = await axios.get(`http://localhost:5000/cart/${user.id}`);
+      const response = await axios.get(
+        `http://localhost:5000/cart/${currentUser.id}`,
+      );
 
       setCart(Array.isArray(response.data) ? response.data : []);
     } catch (error) {
@@ -42,13 +57,18 @@ export default function Cart() {
     } finally {
       setLoading(false);
     }
-  }, [user]);
+  }, [currentUser]);
 
+  // =====================================================
+  // KHI VÀO CART
+  // =====================================================
   useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
     getCart();
   }, [getCart]);
 
+  // =====================================================
+  // CART THAY ĐỔI
+  // =====================================================
   useEffect(() => {
     const handleCartUpdated = () => {
       getCart();
@@ -61,9 +81,12 @@ export default function Cart() {
     };
   }, [getCart]);
 
+  // =====================================================
+  // USER THAY ĐỔI
+  // =====================================================
   useEffect(() => {
     const handleUserChanged = () => {
-      setUser(JSON.parse(localStorage.getItem("user")));
+      getCart();
     };
 
     window.addEventListener("userChanged", handleUserChanged);
@@ -71,7 +94,7 @@ export default function Cart() {
     return () => {
       window.removeEventListener("userChanged", handleUserChanged);
     };
-  }, []);
+  }, [getCart]);
 
   // ======================
   // TỔNG TIỀN
@@ -91,7 +114,7 @@ export default function Cart() {
       }
 
       await axios.put("http://localhost:5000/cart", {
-        userId: user.id,
+        userId: currentUser.id,
         productId: productId,
         qty: newQty,
       });
@@ -117,7 +140,9 @@ export default function Cart() {
   // ======================
   const removeFromCart = async (productId) => {
     try {
-      await axios.delete(`http://localhost:5000/cart/${user.id}/${productId}`);
+      await axios.delete(
+        `http://localhost:5000/cart/${currentUser.id}/${productId}`,
+      );
 
       setCart((prevCart) =>
         prevCart.filter((item) => item.productId !== productId),
@@ -132,7 +157,7 @@ export default function Cart() {
   // VALIDATE
   // ======================
   const validate = () => {
-    if (!user) {
+    if (!currentUser) {
       navigate("/login-user", {
         state: {
           from: "/cart",
@@ -155,13 +180,13 @@ export default function Cart() {
 
     try {
       await axios.post(`http://localhost:5000/orders`, {
-        userId: user.id,
+        userId: currentUser.id,
 
-        name: user.name,
+        name: form.name,
 
-        phone: user.phone,
+        phone: form.phone,
 
-        address: user.address,
+        address: form.address,
 
         note: form.note,
 
@@ -171,6 +196,13 @@ export default function Cart() {
       });
 
       setCart([]);
+
+      // setForm({
+      //   note: "",
+      //   name: currentUser?.name || "",
+      //   phone: currentUser?.phone || "",
+      //   address: currentUser?.address || "",
+      // });
 
       setStep("success");
     } catch (error) {
@@ -230,11 +262,11 @@ export default function Cart() {
           <h2>Đặt hàng thành công!</h2>
 
           <p>
-            Cảm ơn <strong>{user?.name}</strong>! Đơn hàng đã được ghi nhận.
+            Cảm ơn <strong>{form.name}</strong>! Đơn hàng đã được ghi nhận.
           </p>
 
           <p className="cart-success__sub">
-            Chúng tôi sẽ liên hệ qua <strong>{user?.phone}</strong> để xác nhận.
+            Chúng tôi sẽ liên hệ qua <strong>{form.phone}</strong> để xác nhận.
           </p>
 
           <div className="cart-success__btns">
@@ -406,16 +438,36 @@ export default function Cart() {
                 <div className="checkout-form">
                   <div className="checkout-form__row">
                     <div className="checkout-form__group">
-                      <label>Họ và tên: {user.name}</label>
+                      <label>Họ và tên</label>
+                      <input
+                        type="text"
+                        value={form.name}
+                        onChange={(e) => updateForm("name", e.target.value)}
+                        required
+                      />
                     </div>
 
                     <div className="checkout-form__group">
-                      <label>Số điện thoại: {user.phone}</label>
+                      <label>Số điện thoại</label>
+                      <input
+                        type="text"
+                        value={form.phone}
+                        onChange={(e) => updateForm("phone", e.target.value)}
+                        placeholder="Nhập số điện thoại"
+                        required
+                      />
                     </div>
                   </div>
 
                   <div className="checkout-form__group">
-                    <label>Địa chỉ nhận hàng: {user.address}</label>
+                    <label>Địa chỉ nhận hàng</label>
+                    <textarea
+                      rows={3}
+                      value={form.address}
+                      onChange={(e) => updateForm("address", e.target.value)}
+                      placeholder="Nhập địa chỉ nhận hàng"
+                      required
+                    />
                   </div>
 
                   {/* NOTE */}
@@ -506,7 +558,7 @@ export default function Cart() {
                 <button
                   className="cart-btn cart-btn--primary cart-btn--full"
                   onClick={() => {
-                    if (!user) {
+                    if (!currentUser) {
                       navigate("/login-user", {
                         state: {
                           from: "/cart",
@@ -519,7 +571,9 @@ export default function Cart() {
                     setStep("checkout");
                   }}
                 >
-                  {user ? "Tiến hành đặt hàng →" : "🔒 Đăng nhập để đặt hàng"}
+                  {currentUser
+                    ? "Tiến hành đặt hàng →"
+                    : "🔒 Đăng nhập để đặt hàng"}
                 </button>
               )}
 

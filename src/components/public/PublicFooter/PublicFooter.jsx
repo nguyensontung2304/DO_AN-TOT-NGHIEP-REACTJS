@@ -38,7 +38,8 @@ export default function PublicFooter() {
           <a href="#">Thiết kế nội thất</a>
           <a href="#">Lắp đặt tại nhà</a>
           <a href="#">Bảo hành sản phẩm</a>
-          <a href="#">Tư vấn miễn phí</a>
+          {/* <a href="#">Tư vấn miễn phí</a> */}
+          <Link to="/contact">Tư vấn miễn phí</Link>
         </div>
 
         <div className="pub-footer__col">

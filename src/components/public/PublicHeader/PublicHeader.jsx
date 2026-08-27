@@ -1,17 +1,15 @@
+/* eslint-disable react-hooks/set-state-in-effect */
 import { useRef, useState, useEffect, useCallback } from "react";
 import { Link, NavLink, useNavigate } from "react-router-dom";
+import { useSelector, useDispatch } from "react-redux";
+import { clearUser } from "../../../redux/userSlice";
 import axios from "axios";
 
 import "./publicHeader.scss";
 
 export default function PublicHeader() {
-  const [user, setUser] = useState(() => {
-    try {
-      return JSON.parse(localStorage.getItem("user"));
-    } catch {
-      return null;
-    }
-  });
+  const currentUser = useSelector((state) => state.user.currentUser);
+  const dispatch = useDispatch();
 
   const [cartCount, setCartCount] = useState(0);
   const [menuOpen, setMenuOpen] = useState(false);
@@ -20,24 +18,7 @@ export default function PublicHeader() {
   const dropdownRef = useRef(null);
   const navigate = useNavigate();
 
-  // =====================================================
-  // LẤY USER HIỆN TẠI
-  // =====================================================
-  const getCurrentUser = () => {
-    try {
-      return JSON.parse(localStorage.getItem("user"));
-    } catch {
-      return null;
-    }
-  };
-
-  // =====================================================
-  // LẤY SỐ LƯỢNG GIỎ HÀNG CỦA USER HIỆN TẠI
-  // =====================================================
   const getCartCount = useCallback(async () => {
-    const currentUser = getCurrentUser();
-
-    // Không đăng nhập
     if (!currentUser?.id) {
       setCartCount(0);
       return;
@@ -59,34 +40,12 @@ export default function PublicHeader() {
       console.error("Lỗi lấy số lượng giỏ hàng:", error);
       setCartCount(0);
     }
-  }, []);
+  }, [currentUser]);
 
   // =====================================================
-  // USER THAY ĐỔI
-  // LOGIN / LOGOUT
-  // =====================================================
-  useEffect(() => {
-    const handleUserChanged = () => {
-      const currentUser = getCurrentUser();
-
-      setUser(currentUser);
-
-      // User thay đổi thì lấy lại cart của user mới
-      getCartCount();
-    };
-
-    window.addEventListener("userChanged", handleUserChanged);
-
-    return () => {
-      window.removeEventListener("userChanged", handleUserChanged);
-    };
-  }, [getCartCount]);
-
-  // =====================================================
-  // HEADER LOAD LẦN ĐẦU
+  // KHI USER THAY ĐỔI → CẬP NHẬT CART
   // =====================================================
   useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
     getCartCount();
   }, [getCartCount]);
 
@@ -126,25 +85,14 @@ export default function PublicHeader() {
   // ĐĂNG XUẤT
   // =====================================================
   const handleLogout = () => {
-    // Xóa user
-    localStorage.removeItem("user");
+    localStorage.removeItem("userId");
 
-    // Xóa user trên giao diện
-    setUser(null);
+    dispatch(clearUser());
 
-    // Xóa số cart trên giao diện
     setCartCount(0);
 
-    // Đóng dropdown
     setUserDropdown(false);
 
-    // Báo cho toàn bộ app biết user đã thay đổi
-    window.dispatchEvent(new Event("userChanged"));
-
-    // Báo cart thay đổi
-    window.dispatchEvent(new Event("cartUpdated"));
-
-    // Về trang chủ
     navigate("/");
   };
 
@@ -195,14 +143,14 @@ export default function PublicHeader() {
           </button>
 
           {/* CHƯA ĐĂNG NHẬP */}
-          {!user && (
+          {!currentUser && (
             <Link to="/login-user" className="pub-header__login-btn">
               Đăng nhập
             </Link>
           )}
 
           {/* ĐÃ ĐĂNG NHẬP */}
-          {user && (
+          {currentUser && (
             <div className="pub-header__user" ref={dropdownRef}>
               <button
                 className="pub-header__user-btn"
@@ -210,10 +158,10 @@ export default function PublicHeader() {
                 aria-expanded={userDropdown}
               >
                 <span className="pub-header__user-avatar">
-                  {user.name?.charAt(0).toUpperCase()}
+                  {currentUser.name?.charAt(0).toUpperCase()}
                 </span>
 
-                <span className="pub-header__user-name">{user.name}</span>
+                <span className="pub-header__user-name">{currentUser.name}</span>
 
                 <span className="pub-header__user-caret">▾</span>
               </button>
@@ -221,11 +169,19 @@ export default function PublicHeader() {
               {userDropdown && (
                 <div className="pub-header__dropdown">
                   <div className="pub-header__dropdown-info">
-                    <strong>{user.name}</strong>
-                    <small>{user.email}</small>
+                    <strong>{currentUser.name}</strong>
+                    <small>{currentUser.email}</small>
                   </div>
 
                   <div className="pub-header__dropdown-divider" />
+
+                  <Link
+                    to="/profile"
+                    className="pub-header__dropdown-item"
+                    onClick={() => setUserDropdown(false)}
+                  >
+                    👤 Hồ sơ
+                  </Link>
 
                   <button
                     className="pub-header__dropdown-item pub-header__dropdown-item--danger"
