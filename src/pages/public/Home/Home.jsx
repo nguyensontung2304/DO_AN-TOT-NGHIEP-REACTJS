@@ -2,50 +2,44 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { useSelector } from "react-redux";
 import axios from "axios";
-
 import "./home.scss";
 
-// ── Product card ─────────────────────────────────────────────────────────────
+// ── ProductCard ────────────────────────────────────────────────────────────────
+// Hiển thị 1 sản phẩm trong grid, xử lý thêm giỏ hàng inline
 function ProductCard({ product }) {
   const currentUser = useSelector((state) => state.user.currentUser);
+  const [added, setAdded] = useState(false); // feedback tạm thời sau khi thêm
 
-  const [added, setAdded] = useState(false);
-
-  // ======================
-  // THÊM VÀO GIỎ HÀNG
-  // ======================
+  // Thêm sản phẩm vào giỏ hàng
   const handleAdd = async () => {
     if (!currentUser?.id) {
       window.location.href = "/login-user";
       return;
     }
-
     try {
       await axios.post("http://localhost:5000/cart", {
         userId: currentUser.id,
         productId: product.id,
         qty: 1,
       });
-
-      // Lấy lại giỏ hàng mới nhất
+      // Thông báo cho Header cập nhật badge giỏ hàng
       window.dispatchEvent(new Event("cartUpdated"));
-
+      // Hiện trạng thái "Đã thêm" trong 1.8s rồi trở về bình thường
       setAdded(true);
-
-      setTimeout(() => {
-        setAdded(false);
-      }, 1800);
-    } catch (error) {
-      console.error("Lỗi thêm giỏ hàng:", error.response?.data || error);
+      setTimeout(() => setAdded(false), 1800);
+    } catch (err) {
+      console.error("Lỗi thêm giỏ hàng:", err.response?.data || err);
     }
   };
 
   return (
     <div className="product-card">
+      {/* Badge khuyến mãi (nếu có) */}
       {product.badge && (
         <span className="product-card__badge">{product.badge}</span>
       )}
 
+      {/* Ảnh / emoji sản phẩm — click dẫn đến trang chi tiết */}
       <Link
         to={`/products/${product.id}`}
         className="product-card__img"
@@ -55,56 +49,50 @@ function ProductCard({ product }) {
       </Link>
 
       <div className="product-card__body">
+        {/* Danh mục */}
         <span className="product-card__cat">{product.category}</span>
 
+        {/* Tên sản phẩm */}
         <h3 className="product-card__name">
           <Link to={`/products/${product.id}`}>{product.name}</Link>
         </h3>
 
+        {/* Mô tả ngắn — clamp 2 dòng */}
         <p className="product-card__desc">{product.description}</p>
 
+        {/* Giá + giá gốc + % giảm */}
         <div className="product-card__price">
           <strong>{Number(product.price).toLocaleString("vi-VN")}₫</strong>
-
           {product.old_price && (
-            <s>{Number(product.old_price).toLocaleString("vi-VN")}₫</s>
-          )}
-
-          {product.old_price && (
-            <span className="product-card__discount">
-              -
-              {Math.round(
-                (1 - Number(product.price) / Number(product.old_price)) * 100,
-              )}
-              %
-            </span>
+            <>
+              <s>{Number(product.old_price).toLocaleString("vi-VN")}₫</s>
+              <span className="product-card__discount">
+                -{Math.round((1 - Number(product.price) / Number(product.old_price)) * 100)}%
+              </span>
+            </>
           )}
         </div>
 
+        {/* Nút hành động */}
         <div className="product-card__btns">
-          <Link
-            to={`/products/${product.id}`}
-            className="product-card__detail-btn"
-          >
+          <Link to={`/products/${product.id}`} className="product-card__detail-btn">
             Chi tiết
           </Link>
 
           {currentUser ? (
+            // Đã đăng nhập → nút thêm giỏ hàng
             <button
-              className={`product-card__btn ${
-                added ? "product-card__btn--added" : ""
-              }`}
+              className={`product-card__btn ${added ? "product-card__btn--added" : ""}`}
               onClick={handleAdd}
             >
               {added ? "✅ Đã thêm!" : "🛒 Thêm giỏ"}
             </button>
           ) : (
+            // Chưa đăng nhập → chuyển về trang đăng nhập
             <Link
               to="/login-user"
               className="product-card__btn product-card__btn--guest"
-              state={{
-                from: "/",
-              }}
+              state={{ from: "/" }}
             >
               🔒 Đăng nhập
             </Link>
@@ -115,189 +103,133 @@ function ProductCard({ product }) {
   );
 }
 
-// ── Home ─────────────────────────────────────────────────────────────────────
+// ── Home ───────────────────────────────────────────────────────────────────────
 export default function Home() {
+  // ── State ────────────────────────────────────────────────────────────────────
   const [products, setProducts] = useState([]);
-
   const [loading, setLoading] = useState(true);
-
   const [error, setError] = useState("");
-
   const [activeCategory, setActiveCategory] = useState("Tất cả");
-
   const [search, setSearch] = useState("");
-
   const [sortBy, setSortBy] = useState("default");
 
-  // ======================
-  // LẤY SẢN PHẨM
-  // ======================
+  // ── Lấy danh sách sản phẩm từ API ────────────────────────────────────────
   useEffect(() => {
-    const getProducts = async () => {
+    const fetchProducts = async () => {
       try {
         setLoading(true);
-
         setError("");
-
-        const response = await axios.get("http://localhost:5000/products");
-
-        setProducts(response.data);
-      } catch (error) {
-        console.error("Lỗi lấy sản phẩm:", error);
-
+        const res = await axios.get("http://localhost:5000/products");
+        setProducts(res.data);
+      } catch (err) {
+        console.error("Lỗi lấy sản phẩm:", err);
         setError("Không thể tải danh sách sản phẩm");
       } finally {
         setLoading(false);
       }
     };
-
-    getProducts();
+    fetchProducts();
   }, []);
 
-  // ======================
-  // CATEGORY
-  // ======================
+  // ── Danh mục duy nhất từ data ─────────────────────────────────────────────
   const categories = [
     "Tất cả",
-    ...new Set(products.map((product) => product.category).filter(Boolean)),
+    ...new Set(products.map((p) => p.category).filter(Boolean)),
   ];
 
-  // ======================
-  // FILTER
-  // ======================
-  let filtered = products.filter((product) => {
-    const matchCat =
-      activeCategory === "Tất cả" || product.category === activeCategory;
-
+  // ── Lọc theo danh mục + tìm kiếm ────────────────────────────────────────
+  let filtered = products.filter((p) => {
+    const matchCat = activeCategory === "Tất cả" || p.category === activeCategory;
     const matchSearch =
       search.trim() === "" ||
-      product.name?.toLowerCase().includes(search.toLowerCase()) ||
-      product.category?.toLowerCase().includes(search.toLowerCase());
-
+      p.name?.toLowerCase().includes(search.toLowerCase()) ||
+      p.category?.toLowerCase().includes(search.toLowerCase());
     return matchCat && matchSearch;
   });
 
-  // ======================
-  // SORT
-  // ======================
-  if (sortBy === "price-asc") {
+  // ── Sắp xếp ──────────────────────────────────────────────────────────────
+  if (sortBy === "price-asc")
     filtered = [...filtered].sort((a, b) => Number(a.price) - Number(b.price));
-  }
-
-  if (sortBy === "price-desc") {
+  if (sortBy === "price-desc")
     filtered = [...filtered].sort((a, b) => Number(b.price) - Number(a.price));
-  }
-
-  if (sortBy === "name") {
+  if (sortBy === "name")
     filtered = [...filtered].sort((a, b) => a.name.localeCompare(b.name, "vi"));
-  }
 
   return (
     <div className="home">
-      {/* HERO */}
+      {/* ── HERO ──────────────────────────────────────────────────────────── */}
       <section className="home__hero">
         <div className="home__hero-content">
           <span className="home__hero-tag">
             ✨ Nội thất cao cấp — trực tiếp từ xưởng
           </span>
-
           <h1>
             Không gian sống
             <br />
             <span>đẹp hơn mỗi ngày</span>
           </h1>
-
           <p>
-            32 mẫu bàn, ghế, tủ, kệ, sofa được thiết kế tinh tế — chất lượng bền
-            vững, giao hàng lắp đặt tận nhà.
+            32 mẫu bàn, ghế, tủ, kệ, sofa được thiết kế tinh tế — chất lượng
+            bền vững, giao hàng lắp đặt tận nhà.
           </p>
-
           <div className="home__hero-btns">
             <a href="#products" className="btn btn--primary">
               Xem sản phẩm
             </a>
-
             <Link to="/contact" className="btn btn--outline">
               Tư vấn miễn phí
             </Link>
           </div>
         </div>
 
+        {/* 4 card visual bên phải */}
         <div className="home__hero-visual">
           {[
-            {
-              icon: "🛋️",
-              label: "Sofa cao cấp",
-            },
-            {
-              icon: "🪵",
-              label: "Gỗ tự nhiên",
-            },
-            {
-              icon: "🎨",
-              label: "Thiết kế độc quyền",
-            },
-            {
-              icon: "🚚",
-              label: "Giao lắp tận nhà",
-            },
+            { icon: "🛋️", label: "Sofa cao cấp" },
+            { icon: "🪵", label: "Gỗ tự nhiên" },
+            { icon: "🎨", label: "Thiết kế độc quyền" },
+            { icon: "🚚", label: "Giao lắp tận nhà" },
           ].map((c) => (
             <div key={c.label} className="home__hero-card">
               <span>{c.icon}</span>
-
               <p>{c.label}</p>
             </div>
           ))}
         </div>
       </section>
 
-      {/* STATS */}
+      {/* ── STATS ─────────────────────────────────────────────────────────── */}
       <section className="home__stats">
         <div className="home__stats-inner">
           {[
-            {
-              value: "32+",
-              label: "Mẫu sản phẩm",
-            },
-            {
-              value: "10.000+",
-              label: "Khách hàng hài lòng",
-            },
-            {
-              value: "15 năm",
-              label: "Kinh nghiệm",
-            },
-            {
-              value: "100%",
-              label: "Bảo hành chính hãng",
-            },
+            { value: "32+", label: "Mẫu sản phẩm" },
+            { value: "10.000+", label: "Khách hàng hài lòng" },
+            { value: "15 năm", label: "Kinh nghiệm" },
+            { value: "100%", label: "Bảo hành chính hãng" },
           ].map((s) => (
             <div key={s.label} className="home__stat">
               <strong>{s.value}</strong>
-
               <span>{s.label}</span>
             </div>
           ))}
         </div>
       </section>
 
-      {/* PRODUCTS */}
+      {/* ── DANH SÁCH SẢN PHẨM ───────────────────────────────────────────── */}
       <section className="home__products-section" id="products">
         <div className="home__products-inner">
           <h2 className="home__section-title">Tất cả sản phẩm</h2>
 
-          {/* TOOLBAR */}
+          {/* Thanh tìm kiếm + sắp xếp */}
           <div className="products-toolbar">
             <div className="products-search">
               <span>🔍</span>
-
               <input
                 type="text"
                 placeholder="Tìm sản phẩm..."
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
               />
-
               {search && (
                 <button onClick={() => setSearch("")} aria-label="Xóa tìm kiếm">
                   ✕
@@ -311,70 +243,56 @@ export default function Home() {
               onChange={(e) => setSortBy(e.target.value)}
             >
               <option value="default">Sắp xếp mặc định</option>
-
               <option value="price-asc">Giá: Thấp → Cao</option>
-
               <option value="price-desc">Giá: Cao → Thấp</option>
-
               <option value="name">Tên A → Z</option>
             </select>
           </div>
 
-          {/* CATEGORY */}
+          {/* Tabs danh mục */}
           <div className="products-cats">
             {categories.map((cat) => {
               const count =
                 cat === "Tất cả"
                   ? products.length
-                  : products.filter((product) => product.category === cat)
-                      .length;
-
+                  : products.filter((p) => p.category === cat).length;
               return (
                 <button
                   key={cat}
-                  className={`products-cat-btn ${
-                    activeCategory === cat ? "active" : ""
-                  }`}
+                  className={`products-cat-btn ${activeCategory === cat ? "active" : ""}`}
                   onClick={() => setActiveCategory(cat)}
                 >
                   {cat}
-
                   <span className="products-cat-count">{count}</span>
                 </button>
               );
             })}
           </div>
 
-          {/* RESULT */}
+          {/* Số kết quả */}
           {!loading && !error && (
             <p className="products-result-count">
               {filtered.length === products.length
                 ? `Hiển thị ${products.length} sản phẩm`
-                : `${filtered.length} sản phẩm${
-                    search ? ` cho "${search}"` : ""
-                  }`}
+                : `${filtered.length} sản phẩm${search ? ` cho "${search}"` : ""}`}
             </p>
           )}
 
-          {/* LOADING */}
+          {/* Loading / lỗi / rỗng / grid */}
           {loading ? (
             <div className="products-empty">
               <span>⏳</span>
-
               <p>Đang tải sản phẩm...</p>
             </div>
           ) : error ? (
             <div className="products-empty">
               <span>⚠️</span>
-
               <p>{error}</p>
             </div>
           ) : filtered.length === 0 ? (
             <div className="products-empty">
               <span>😕</span>
-
               <p>Không tìm thấy sản phẩm phù hợp.</p>
-
               <button
                 className="btn btn--outline"
                 onClick={() => {
@@ -387,19 +305,18 @@ export default function Home() {
             </div>
           ) : (
             <div className="products-grid">
-              {filtered.map((product) => (
-                <ProductCard key={product.id} product={product} />
+              {filtered.map((p) => (
+                <ProductCard key={p.id} product={p} />
               ))}
             </div>
           )}
         </div>
       </section>
 
-      {/* WHY US */}
+      {/* ── TẠI SAO CHỌN CHÚNG TÔI ───────────────────────────────────────── */}
       <section className="home__features-section">
         <div className="home__products-inner">
           <h2 className="home__section-title">Tại sao chọn Nội Thất Việt?</h2>
-
           <div className="home__features">
             {[
               {
@@ -425,9 +342,7 @@ export default function Home() {
             ].map((f) => (
               <div key={f.title} className="home__feature">
                 <span>{f.icon}</span>
-
                 <h3>{f.title}</h3>
-
                 <p>{f.desc}</p>
               </div>
             ))}
@@ -435,14 +350,11 @@ export default function Home() {
         </div>
       </section>
 
-      {/* CTA */}
-
+      {/* ── CTA ───────────────────────────────────────────────────────────── */}
       <section className="home__cta">
         <div className="home__cta-inner">
           <h2>Bạn cần tư vấn thiết kế nội thất?</h2>
-
           <p>Đội ngũ chuyên gia sẵn sàng hỗ trợ 7 ngày/tuần.</p>
-
           <Link to="/contact" className="btn btn--white">
             Liên hệ ngay
           </Link>

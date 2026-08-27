@@ -292,7 +292,7 @@
 // ── Sidebar ────────────────────────────────────────────────────────────────────
 .cart-sidebar {
   position: sticky;
-  top: 120px;
+  top: 88px; // header cao 68px + khoảng cách 20px
 }
 
 .cart-summary {
@@ -448,9 +448,10 @@
     gap: 6px;
 
     label {
-      font-size: 20px;
+      font-size: 13px;
       font-weight: 600;
-      color: #333;
+      color: #444;
+      letter-spacing: 0.2px;
     }
 
     input,
