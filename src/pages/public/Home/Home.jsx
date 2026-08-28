@@ -4,13 +4,13 @@ import { useSelector } from "react-redux";
 import axios from "axios";
 import "./home.scss";
 
+const PRODUCTS_PER_PAGE = 12;
+
 // ── ProductCard ────────────────────────────────────────────────────────────────
-// Hiển thị 1 sản phẩm trong grid, xử lý thêm giỏ hàng inline
 function ProductCard({ product }) {
   const currentUser = useSelector((state) => state.user.currentUser);
-  const [added, setAdded] = useState(false); // feedback tạm thời sau khi thêm
+  const [added, setAdded] = useState(false);
 
-  // Thêm sản phẩm vào giỏ hàng
   const handleAdd = async () => {
     if (!currentUser?.id) {
       window.location.href = "/login-user";
@@ -22,9 +22,7 @@ function ProductCard({ product }) {
         productId: product.id,
         qty: 1,
       });
-      // Thông báo cho Header cập nhật badge giỏ hàng
       window.dispatchEvent(new Event("cartUpdated"));
-      // Hiện trạng thái "Đã thêm" trong 1.8s rồi trở về bình thường
       setAdded(true);
       setTimeout(() => setAdded(false), 1800);
     } catch (err) {
@@ -34,12 +32,10 @@ function ProductCard({ product }) {
 
   return (
     <div className="product-card">
-      {/* Badge khuyến mãi (nếu có) */}
       {product.badge && (
         <span className="product-card__badge">{product.badge}</span>
       )}
 
-      {/* Ảnh / emoji sản phẩm — click dẫn đến trang chi tiết */}
       <Link
         to={`/products/${product.id}`}
         className="product-card__img"
@@ -49,18 +45,14 @@ function ProductCard({ product }) {
       </Link>
 
       <div className="product-card__body">
-        {/* Danh mục */}
         <span className="product-card__cat">{product.category}</span>
 
-        {/* Tên sản phẩm */}
         <h3 className="product-card__name">
           <Link to={`/products/${product.id}`}>{product.name}</Link>
         </h3>
 
-        {/* Mô tả ngắn — clamp 2 dòng */}
         <p className="product-card__desc">{product.description}</p>
 
-        {/* Giá + giá gốc + % giảm */}
         <div className="product-card__price">
           <strong>{Number(product.price).toLocaleString("vi-VN")}₫</strong>
           {product.old_price && (
@@ -73,14 +65,12 @@ function ProductCard({ product }) {
           )}
         </div>
 
-        {/* Nút hành động */}
         <div className="product-card__btns">
           <Link to={`/products/${product.id}`} className="product-card__detail-btn">
             Chi tiết
           </Link>
 
           {currentUser ? (
-            // Đã đăng nhập → nút thêm giỏ hàng
             <button
               className={`product-card__btn ${added ? "product-card__btn--added" : ""}`}
               onClick={handleAdd}
@@ -88,7 +78,6 @@ function ProductCard({ product }) {
               {added ? "✅ Đã thêm!" : "🛒 Thêm giỏ"}
             </button>
           ) : (
-            // Chưa đăng nhập → chuyển về trang đăng nhập
             <Link
               to="/login-user"
               className="product-card__btn product-card__btn--guest"
@@ -105,15 +94,15 @@ function ProductCard({ product }) {
 
 // ── Home ───────────────────────────────────────────────────────────────────────
 export default function Home() {
-  // ── State ────────────────────────────────────────────────────────────────────
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [activeCategory, setActiveCategory] = useState("Tất cả");
   const [search, setSearch] = useState("");
   const [sortBy, setSortBy] = useState("default");
+  const [currentPage, setCurrentPage] = useState(1);
 
-  // ── Lấy danh sách sản phẩm từ API ────────────────────────────────────────
+  // ── Lấy sản phẩm ─────────────────────────────────────────────────────────
   useEffect(() => {
     const fetchProducts = async () => {
       try {
@@ -131,15 +120,21 @@ export default function Home() {
     fetchProducts();
   }, []);
 
-  // ── Danh mục duy nhất từ data ─────────────────────────────────────────────
+  // ── Reset về trang 1 khi filter / search / sort thay đổi ─────────────────
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [activeCategory, search, sortBy]);
+
+  // ── Danh mục ─────────────────────────────────────────────────────────────
   const categories = [
     "Tất cả",
     ...new Set(products.map((p) => p.category).filter(Boolean)),
   ];
 
-  // ── Lọc theo danh mục + tìm kiếm ────────────────────────────────────────
+  // ── Lọc ──────────────────────────────────────────────────────────────────
   let filtered = products.filter((p) => {
-    const matchCat = activeCategory === "Tất cả" || p.category === activeCategory;
+    const matchCat =
+      activeCategory === "Tất cả" || p.category === activeCategory;
     const matchSearch =
       search.trim() === "" ||
       p.name?.toLowerCase().includes(search.toLowerCase()) ||
@@ -155,6 +150,39 @@ export default function Home() {
   if (sortBy === "name")
     filtered = [...filtered].sort((a, b) => a.name.localeCompare(b.name, "vi"));
 
+  // ── Phân trang ────────────────────────────────────────────────────────────
+  const totalPages = Math.ceil(filtered.length / PRODUCTS_PER_PAGE);
+  const paginated = filtered.slice(
+    (currentPage - 1) * PRODUCTS_PER_PAGE,
+    currentPage * PRODUCTS_PER_PAGE,
+  );
+
+  const goToPage = (page) => {
+    setCurrentPage(page);
+    // Cuộn lên section sản phẩm
+    document.getElementById("products")?.scrollIntoView({ behavior: "smooth", block: "start" });
+  };
+
+  // Tạo mảng số trang để render (luôn hiển thị tối đa 5 trang liên tiếp)
+  const getPageNumbers = () => {
+    if (totalPages <= 7) {
+      return Array.from({ length: totalPages }, (_, i) => i + 1);
+    }
+    const pages = [];
+    const delta = 2;
+    const left = currentPage - delta;
+    const right = currentPage + delta;
+
+    pages.push(1);
+    if (left > 2) pages.push("...");
+    for (let i = Math.max(2, left); i <= Math.min(totalPages - 1, right); i++) {
+      pages.push(i);
+    }
+    if (right < totalPages - 1) pages.push("...");
+    pages.push(totalPages);
+    return pages;
+  };
+
   return (
     <div className="home">
       {/* ── HERO ──────────────────────────────────────────────────────────── */}
@@ -169,8 +197,8 @@ export default function Home() {
             <span>đẹp hơn mỗi ngày</span>
           </h1>
           <p>
-            32 mẫu bàn, ghế, tủ, kệ, sofa được thiết kế tinh tế — chất lượng
-            bền vững, giao hàng lắp đặt tận nhà.
+            32 mẫu bàn, ghế, tủ, kệ, sofa được thiết kế tinh tế — chất lượng bền
+            vững, giao hàng lắp đặt tận nhà.
           </p>
           <div className="home__hero-btns">
             <a href="#products" className="btn btn--primary">
@@ -182,7 +210,6 @@ export default function Home() {
           </div>
         </div>
 
-        {/* 4 card visual bên phải */}
         <div className="home__hero-visual">
           {[
             { icon: "🛋️", label: "Sofa cao cấp" },
@@ -269,12 +296,14 @@ export default function Home() {
             })}
           </div>
 
-          {/* Số kết quả */}
+          {/* Số kết quả + thông tin trang */}
           {!loading && !error && (
             <p className="products-result-count">
-              {filtered.length === products.length
-                ? `Hiển thị ${products.length} sản phẩm`
-                : `${filtered.length} sản phẩm${search ? ` cho "${search}"` : ""}`}
+              {filtered.length === 0
+                ? "Không có sản phẩm nào"
+                : filtered.length === products.length
+                ? `Hiển thị ${paginated.length} / ${products.length} sản phẩm — Trang ${currentPage}/${totalPages}`
+                : `${filtered.length} sản phẩm${search ? ` cho "${search}"` : ""} — Trang ${currentPage}/${totalPages || 1}`}
             </p>
           )}
 
@@ -304,11 +333,54 @@ export default function Home() {
               </button>
             </div>
           ) : (
-            <div className="products-grid">
-              {filtered.map((p) => (
-                <ProductCard key={p.id} product={p} />
-              ))}
-            </div>
+            <>
+              <div className="products-grid">
+                {paginated.map((p) => (
+                  <ProductCard key={p.id} product={p} />
+                ))}
+              </div>
+
+              {/* Phân trang */}
+              {totalPages > 1 && (
+                <div className="pagination">
+                  <button
+                    className="pagination__btn pagination__btn--nav"
+                    onClick={() => goToPage(currentPage - 1)}
+                    disabled={currentPage === 1}
+                    aria-label="Trang trước"
+                  >
+                    ‹
+                  </button>
+
+                  {getPageNumbers().map((page, idx) =>
+                    page === "..." ? (
+                      <span key={`ellipsis-${idx}`} className="pagination__ellipsis">
+                        …
+                      </span>
+                    ) : (
+                      <button
+                        key={page}
+                        className={`pagination__btn ${currentPage === page ? "pagination__btn--active" : ""}`}
+                        onClick={() => goToPage(page)}
+                        aria-label={`Trang ${page}`}
+                        aria-current={currentPage === page ? "page" : undefined}
+                      >
+                        {page}
+                      </button>
+                    ),
+                  )}
+
+                  <button
+                    className="pagination__btn pagination__btn--nav"
+                    onClick={() => goToPage(currentPage + 1)}
+                    disabled={currentPage === totalPages}
+                    aria-label="Trang tiếp"
+                  >
+                    ›
+                  </button>
+                </div>
+              )}
+            </>
           )}
         </div>
       </section>

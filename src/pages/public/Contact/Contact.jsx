@@ -6,6 +6,12 @@ import Map from "../map/map";
 export default function Contact() {
   const currentUser = useSelector((state) => state.user.currentUser);
 
+  // Kiểm tra profile đã đủ thông tin chưa
+  const profileComplete =
+    currentUser &&
+    currentUser.name?.trim() &&
+    currentUser.phone?.trim();
+
   // ── Form state ─────────────────────────────────────────────────────────────
   const [form, setForm] = useState({
     name: "",
@@ -15,25 +21,64 @@ export default function Contact() {
   });
   const [sent, setSent] = useState(false);
 
+  // Lỗi validate từng field
+  const [formErrors, setFormErrors] = useState({
+    name: "",
+    phone: "",
+    message: "",
+  });
+
   // ── Auto-fill thông tin user khi đăng nhập ─────────────────────────────────
+  // Chỉ điền khi form chưa có giá trị (tránh ghi đè khi user đã sửa)
   useEffect(() => {
     if (currentUser) {
       setForm((prev) => ({
         ...prev,
-        name: currentUser.name || prev.name,
-        phone: currentUser.phone || prev.phone,
-        email: currentUser.email || prev.email,
+        name: prev.name || currentUser.name || "",
+        phone: prev.phone || currentUser.phone || "",
+        email: prev.email || currentUser.email || "",
       }));
     }
   }, [currentUser]);
 
+  // ── Validate form ──────────────────────────────────────────────────────────
+  const validateForm = () => {
+    const errors = { name: "", phone: "", message: "" };
+    let valid = true;
+
+    if (!form.name.trim()) {
+      errors.name = "Vui lòng nhập họ và tên.";
+      valid = false;
+    }
+    if (!form.phone.trim()) {
+      errors.phone = "Vui lòng nhập số điện thoại.";
+      valid = false;
+    }
+    if (!form.message.trim()) {
+      errors.message = "Vui lòng nhập nội dung tin nhắn.";
+      valid = false;
+    }
+
+    setFormErrors(errors);
+    return valid;
+  };
+
+  // ── Helper cập nhật field + xóa lỗi ──────────────────────────────────────
+  const updateField = (field, value) => {
+    setForm((f) => ({ ...f, [field]: value }));
+    if (formErrors[field]) {
+      setFormErrors((prev) => ({ ...prev, [field]: "" }));
+    }
+  };
+
   // ── Gửi form liên hệ ───────────────────────────────────────────────────────
   const handleSubmit = (e) => {
     e.preventDefault();
+    if (!validateForm()) return;
+
     // TODO: gọi API gửi tin nhắn khi backend sẵn sàng
     console.log("Gửi liên hệ:", form);
     setSent(true);
-    setForm({ name: "", phone: "", email: "", message: "" });
   };
 
   return (
@@ -98,14 +143,34 @@ export default function Contact() {
           <div className="contact-form-wrap">
             <h2>Gửi tin nhắn cho chúng tôi</h2>
 
-            {/* Hiển thị banner khi đã đăng nhập */}
-            {currentUser && !sent && (
-              <div className="contact-user-banner">
-                <span>👤</span>
-                <span>
-                  Xin chào <strong>{currentUser.name}</strong>! Thông tin của bạn đã được điền tự động.
-                </span>
-              </div>
+            {/* Banner trạng thái người dùng */}
+            {!sent && (
+              <>
+                {currentUser && profileComplete && (
+                  <div className="contact-user-banner contact-user-banner--filled">
+                    <span>✅</span>
+                    <span>
+                      Xin chào <strong>{currentUser.name}</strong>! Thông tin của bạn đã được điền sẵn. Bạn có thể chỉnh sửa nếu cần.
+                    </span>
+                  </div>
+                )}
+                {currentUser && !profileComplete && (
+                  <div className="contact-user-banner contact-user-banner--partial">
+                    <span>📝</span>
+                    <span>
+                      Hồ sơ của bạn chưa đầy đủ. Vui lòng điền thông tin bên dưới.
+                    </span>
+                  </div>
+                )}
+                {!currentUser && (
+                  <div className="contact-user-banner contact-user-banner--guest">
+                    <span>👤</span>
+                    <span>
+                      Bạn chưa đăng nhập. Vui lòng điền đầy đủ thông tin bên dưới để gửi liên hệ.
+                    </span>
+                  </div>
+                )}
+              </>
             )}
 
             {sent ? (
@@ -114,10 +179,24 @@ export default function Contact() {
                 <div className="contact-success__icon">✅</div>
                 <h3>Gửi thành công!</h3>
                 <p>Chúng tôi sẽ phản hồi trong vòng 24 giờ. Cảm ơn bạn!</p>
-                <button onClick={() => setSent(false)}>Gửi tin nhắn khác</button>
+                <button
+                  onClick={() => {
+                    setSent(false);
+                    // Reset form nhưng giữ lại thông tin cá nhân nếu đã đăng nhập
+                    setForm({
+                      name: currentUser?.name || "",
+                      phone: currentUser?.phone || "",
+                      email: currentUser?.email || "",
+                      message: "",
+                    });
+                    setFormErrors({ name: "", phone: "", message: "" });
+                  }}
+                >
+                  Gửi tin nhắn khác
+                </button>
               </div>
             ) : (
-              <form className="contact-form" onSubmit={handleSubmit}>
+              <form className="contact-form" onSubmit={handleSubmit} noValidate>
                 {/* Họ tên + Điện thoại */}
                 <div className="contact-form__row">
                   <div className="contact-form__group">
@@ -127,12 +206,13 @@ export default function Contact() {
                     <input
                       type="text"
                       value={form.name}
-                      onChange={(e) =>
-                        setForm((f) => ({ ...f, name: e.target.value }))
-                      }
+                      onChange={(e) => updateField("name", e.target.value)}
                       placeholder="Nguyễn Văn A"
-                      required
+                      className={formErrors.name ? "input-error" : ""}
                     />
+                    {formErrors.name && (
+                      <p className="contact-field-error">{formErrors.name}</p>
+                    )}
                   </div>
                   <div className="contact-form__group">
                     <label>
@@ -141,12 +221,13 @@ export default function Contact() {
                     <input
                       type="tel"
                       value={form.phone}
-                      onChange={(e) =>
-                        setForm((f) => ({ ...f, phone: e.target.value }))
-                      }
+                      onChange={(e) => updateField("phone", e.target.value)}
                       placeholder="0909 123 456"
-                      required
+                      className={formErrors.phone ? "input-error" : ""}
                     />
+                    {formErrors.phone && (
+                      <p className="contact-field-error">{formErrors.phone}</p>
+                    )}
                   </div>
                 </div>
 
@@ -156,9 +237,7 @@ export default function Contact() {
                   <input
                     type="email"
                     value={form.email}
-                    onChange={(e) =>
-                      setForm((f) => ({ ...f, email: e.target.value }))
-                    }
+                    onChange={(e) => updateField("email", e.target.value)}
                     placeholder="email@example.com"
                   />
                 </div>
@@ -171,12 +250,13 @@ export default function Contact() {
                   <textarea
                     rows={5}
                     value={form.message}
-                    onChange={(e) =>
-                      setForm((f) => ({ ...f, message: e.target.value }))
-                    }
+                    onChange={(e) => updateField("message", e.target.value)}
                     placeholder="Bạn cần tư vấn về sản phẩm, báo giá, hay đặt lịch tham quan showroom?"
-                    required
+                    className={formErrors.message ? "input-error" : ""}
                   />
+                  {formErrors.message && (
+                    <p className="contact-field-error">{formErrors.message}</p>
+                  )}
                 </div>
 
                 <button type="submit" className="contact-form__submit">
