@@ -8,9 +8,7 @@ export default function Contact() {
 
   // Kiểm tra profile đã đủ thông tin chưa
   const profileComplete =
-    currentUser &&
-    currentUser.name?.trim() &&
-    currentUser.phone?.trim();
+    currentUser && currentUser.name?.trim() && currentUser.phone?.trim();
 
   // ── Form state ─────────────────────────────────────────────────────────────
   const [form, setForm] = useState({
@@ -88,7 +86,9 @@ export default function Contact() {
         <div className="contact-hero__inner">
           <span className="contact-hero__tag">📬 Hỗ trợ 7 ngày/tuần</span>
           <h1>Liên hệ với chúng tôi</h1>
-          <p>Đội ngũ tư vấn sẵn sàng hỗ trợ bạn mọi lúc — hãy để lại tin nhắn!</p>
+          <p>
+            Đội ngũ tư vấn sẵn sàng hỗ trợ bạn mọi lúc — hãy để lại tin nhắn!
+          </p>
         </div>
       </section>
 
@@ -133,9 +133,15 @@ export default function Contact() {
 
             {/* Mạng xã hội */}
             <div className="contact-socials">
-              <a href="#" aria-label="Facebook">📘 Facebook</a>
-              <a href="#" aria-label="Zalo">💬 Zalo</a>
-              <a href="#" aria-label="Youtube">▶️ Youtube</a>
+              <a href="#" aria-label="Facebook">
+                📘 Facebook
+              </a>
+              <a href="#" aria-label="Zalo">
+                💬 Zalo
+              </a>
+              <a href="#" aria-label="Youtube">
+                ▶️ Youtube
+              </a>
             </div>
           </div>
 
@@ -150,7 +156,8 @@ export default function Contact() {
                   <div className="contact-user-banner contact-user-banner--filled">
                     <span>✅</span>
                     <span>
-                      Xin chào <strong>{currentUser.name}</strong>! Thông tin của bạn đã được điền sẵn. Bạn có thể chỉnh sửa nếu cần.
+                      Xin chào <strong>{currentUser.name}</strong>! Thông tin
+                      của bạn đã được điền sẵn. Bạn có thể chỉnh sửa nếu cần.
                     </span>
                   </div>
                 )}
@@ -158,7 +165,8 @@ export default function Contact() {
                   <div className="contact-user-banner contact-user-banner--partial">
                     <span>📝</span>
                     <span>
-                      Hồ sơ của bạn chưa đầy đủ. Vui lòng điền thông tin bên dưới.
+                      Hồ sơ của bạn chưa đầy đủ. Vui lòng điền thông tin bên
+                      dưới.
                     </span>
                   </div>
                 )}
@@ -166,7 +174,8 @@ export default function Contact() {
                   <div className="contact-user-banner contact-user-banner--guest">
                     <span>👤</span>
                     <span>
-                      Bạn chưa đăng nhập. Vui lòng điền đầy đủ thông tin bên dưới để gửi liên hệ.
+                      Bạn chưa đăng nhập. Vui lòng điền đầy đủ thông tin bên
+                      dưới để gửi liên hệ.
                     </span>
                   </div>
                 )}

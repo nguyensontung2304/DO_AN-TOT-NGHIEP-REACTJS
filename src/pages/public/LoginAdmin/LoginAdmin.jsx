@@ -3,7 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { useApp } from "../../../context/useApp";
 import "./loginAdmin.scss";
 
-export default function Login() {
+export default function LoginAdmin() {
   const { login } = useApp();
   const navigate = useNavigate();
   const [username, setUsername] = useState("");
@@ -16,8 +16,8 @@ export default function Login() {
     setError("");
     setLoading(true);
     setTimeout(() => {
-      const ok = login(username, password);
-      if (ok) {
+      const loginUser = login(username, password);
+      if (loginUser) {
         navigate("/admin");
       } else {
         setError("Tên đăng nhập hoặc mật khẩu không đúng.");

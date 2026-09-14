@@ -105,9 +105,18 @@ export default function Cart() {
   const validateForm = () => {
     const errors = { name: "", phone: "", address: "" };
     let valid = true;
-    if (!form.name.trim()) { errors.name = "Vui lòng nhập họ và tên."; valid = false; }
-    if (!form.phone.trim()) { errors.phone = "Vui lòng nhập số điện thoại."; valid = false; }
-    if (!form.address.trim()) { errors.address = "Vui lòng nhập địa chỉ nhận hàng."; valid = false; }
+    if (!form.name.trim()) {
+      errors.name = "Vui lòng nhập họ và tên.";
+      valid = false;
+    }
+    if (!form.phone.trim()) {
+      errors.phone = "Vui lòng nhập số điện thoại.";
+      valid = false;
+    }
+    if (!form.address.trim()) {
+      errors.address = "Vui lòng nhập địa chỉ nhận hàng.";
+      valid = false;
+    }
     setFormErrors(errors);
     return valid;
   };
@@ -121,7 +130,9 @@ export default function Cart() {
     }
     try {
       setLoading(true);
-      const res = await axios.get(`http://localhost:5000/cart/${currentUser.id}`);
+      const res = await axios.get(
+        `http://localhost:5000/cart/${currentUser.id}`,
+      );
       setCart(Array.isArray(res.data) ? res.data : []);
     } catch (err) {
       console.error("Lỗi lấy giỏ hàng:", err);
@@ -131,7 +142,9 @@ export default function Cart() {
     }
   }, [currentUser]);
 
-  useEffect(() => { getCart(); }, [getCart]);
+  useEffect(() => {
+    getCart();
+  }, [getCart]);
 
   useEffect(() => {
     window.addEventListener("cartUpdated", getCart);
@@ -144,11 +157,16 @@ export default function Cart() {
 
   // ── Lấy danh sách đơn hàng ────────────────────────────────────────────────
   const loadOrders = useCallback(async () => {
-    if (!currentUser?.id) { setOrders([]); return; }
+    if (!currentUser?.id) {
+      setOrders([]);
+      return;
+    }
     setOrdersLoading(true);
     try {
       // Thử lấy từ API trước
-      const res = await axios.get(`http://localhost:5000/orders/${currentUser.id}`);
+      const res = await axios.get(
+        `http://localhost:5000/orders/${currentUser.id}`,
+      );
       const apiOrders = Array.isArray(res.data) ? res.data : [];
       if (apiOrders.length > 0) {
         setOrders(apiOrders);
@@ -177,7 +195,10 @@ export default function Cart() {
 
   // ── Cập nhật qty ──────────────────────────────────────────────────────────
   const updateCartQty = async (productId, newQty) => {
-    if (newQty <= 0) { await removeFromCart(productId); return; }
+    if (newQty <= 0) {
+      await removeFromCart(productId);
+      return;
+    }
     try {
       await axios.put("http://localhost:5000/cart", {
         userId: currentUser.id,
@@ -198,7 +219,9 @@ export default function Cart() {
   // ── Xóa sản phẩm khỏi giỏ ────────────────────────────────────────────────
   const removeFromCart = async (productId) => {
     try {
-      await axios.delete(`http://localhost:5000/cart/${currentUser.id}/${productId}`);
+      await axios.delete(
+        `http://localhost:5000/cart/${currentUser.id}/${productId}`,
+      );
       setCart((prev) => prev.filter((item) => item.productId !== productId));
     } catch (err) {
       console.error("Lỗi xóa sản phẩm:", err);
@@ -211,7 +234,9 @@ export default function Cart() {
     try {
       await Promise.all(
         cart.map((item) =>
-          axios.delete(`http://localhost:5000/cart/${currentUser.id}/${item.productId}`),
+          axios.delete(
+            `http://localhost:5000/cart/${currentUser.id}/${item.productId}`,
+          ),
         ),
       );
       window.dispatchEvent(new Event("cartUpdated"));
@@ -342,7 +367,10 @@ export default function Cart() {
         <div className="cart-tabs">
           <button
             className={`cart-tab ${activeTab === "cart" ? "cart-tab--active" : ""}`}
-            onClick={() => { setActiveTab("cart"); setStep("cart"); }}
+            onClick={() => {
+              setActiveTab("cart");
+              setStep("cart");
+            }}
           >
             🛒 Giỏ hàng
             {cart.length > 0 && (
@@ -389,7 +417,9 @@ export default function Cart() {
               <div className="orders-list">
                 <div className="orders-list__header">
                   <h2>Đơn hàng của tôi</h2>
-                  <span className="orders-list__count">{orders.length} đơn</span>
+                  <span className="orders-list__count">
+                    {orders.length} đơn
+                  </span>
                 </div>
 
                 {orders.map((order, idx) => {
@@ -427,7 +457,9 @@ export default function Cart() {
                           <span className="order-card__id">
                             Đơn #{String(orderId).slice(-6).toUpperCase()}
                           </span>
-                          <span className="order-card__date">{createdDate}</span>
+                          <span className="order-card__date">
+                            {createdDate}
+                          </span>
                         </div>
 
                         <div className="order-card__right">
@@ -488,6 +520,7 @@ export default function Cart() {
                                   ).toLocaleString("vi-VN")}
                                   ₫
                                 </span>
+                                <button>Hủy đơn hàng</button>
                               </div>
                             ))}
                           </div>
@@ -528,17 +561,23 @@ export default function Cart() {
               <>
                 {/* Thanh tiến trình 3 bước */}
                 <div className="cart-steps">
-                  <div className={`cart-steps__item ${step === "cart" ? "active" : "done"}`}>
+                  <div
+                    className={`cart-steps__item ${step === "cart" ? "active" : "done"}`}
+                  >
                     <span>1</span>
                     Giỏ hàng
                   </div>
                   <div className="cart-steps__line" />
-                  <div className={`cart-steps__item ${step === "checkout" ? "active" : ""}`}>
+                  <div
+                    className={`cart-steps__item ${step === "checkout" ? "active" : ""}`}
+                  >
                     <span>2</span>
                     Thông tin đặt hàng
                   </div>
                   <div className="cart-steps__line" />
-                  <div className={`cart-steps__item ${step === "success" ? "active" : ""}`}>
+                  <div
+                    className={`cart-steps__item ${step === "success" ? "active" : ""}`}
+                  >
                     <span>3</span>
                     Xác nhận
                   </div>
@@ -552,7 +591,9 @@ export default function Cart() {
                       <>
                         <h2 className="cart-section-title">
                           🛒 Giỏ hàng của bạn
-                          <span className="cart-count">({cart.length} sản phẩm)</span>
+                          <span className="cart-count">
+                            ({cart.length} sản phẩm)
+                          </span>
                         </h2>
 
                         <div className="cart-items">
@@ -568,13 +609,16 @@ export default function Cart() {
                                 {item.recipe && item.recipe.length > 0 && (
                                   <details className="cart-item__recipe">
                                     <summary>
-                                      Nguyên vật liệu cần ({item.recipe.length} loại)
+                                      Nguyên vật liệu cần ({item.recipe.length}{" "}
+                                      loại)
                                     </summary>
                                     <ul>
                                       {item.recipe.map((r, i) => (
                                         <li key={i}>
                                           {r.materialName}:{" "}
-                                          <strong>{r.qty * item.qty} {r.unit}</strong>
+                                          <strong>
+                                            {r.qty * item.qty} {r.unit}
+                                          </strong>
                                         </li>
                                       ))}
                                     </ul>
@@ -584,12 +628,33 @@ export default function Cart() {
 
                               <div className="cart-item__actions">
                                 <div className="cart-qty">
-                                  <button onClick={() => updateCartQty(item.productId, item.qty - 1)}>−</button>
+                                  <button
+                                    onClick={() =>
+                                      updateCartQty(
+                                        item.productId,
+                                        item.qty - 1,
+                                      )
+                                    }
+                                  >
+                                    −
+                                  </button>
                                   <span>{item.qty}</span>
-                                  <button onClick={() => updateCartQty(item.productId, item.qty + 1)}>+</button>
+                                  <button
+                                    onClick={() =>
+                                      updateCartQty(
+                                        item.productId,
+                                        item.qty + 1,
+                                      )
+                                    }
+                                  >
+                                    +
+                                  </button>
                                 </div>
                                 <p className="cart-item__subtotal">
-                                  {(Number(item.price) * Number(item.qty)).toLocaleString("vi-VN")}₫
+                                  {(
+                                    Number(item.price) * Number(item.qty)
+                                  ).toLocaleString("vi-VN")}
+                                  ₫
                                 </p>
                                 <button
                                   className="cart-item__remove"
@@ -612,21 +677,28 @@ export default function Cart() {
                     {/* BƯỚC 2: Thông tin đặt hàng */}
                     {step === "checkout" && (
                       <>
-                        <h2 className="cart-section-title">📋 Thông tin đặt hàng</h2>
+                        <h2 className="cart-section-title">
+                          📋 Thông tin đặt hàng
+                        </h2>
 
                         {profileComplete ? (
                           <div className="checkout-profile-banner checkout-profile-banner--filled">
                             <span>✅</span>
                             <span>
-                              Thông tin từ hồ sơ của bạn đã được điền sẵn. Bạn có thể chỉnh sửa nếu cần.
+                              Thông tin từ hồ sơ của bạn đã được điền sẵn. Bạn
+                              có thể chỉnh sửa nếu cần.
                             </span>
                           </div>
                         ) : (
                           <div className="checkout-profile-banner checkout-profile-banner--empty">
                             <span>⚠️</span>
                             <span>
-                              Bạn chưa cập nhật hồ sơ. Vui lòng điền đầy đủ thông tin bên dưới để đặt hàng.{" "}
-                              <Link to="/profile" className="checkout-profile-link">
+                              Bạn chưa cập nhật hồ sơ. Vui lòng điền đầy đủ
+                              thông tin bên dưới để đặt hàng.{" "}
+                              <Link
+                                to="/profile"
+                                className="checkout-profile-link"
+                              >
                                 Cập nhật hồ sơ ngay
                               </Link>
                             </span>
@@ -636,39 +708,65 @@ export default function Cart() {
                         <div className="checkout-form">
                           <div className="checkout-form__row">
                             <div className="checkout-form__group">
-                              <label>Họ và tên <span className="req">*</span></label>
+                              <label>
+                                Họ và tên <span className="req">*</span>
+                              </label>
                               <input
                                 type="text"
                                 value={form.name}
-                                onChange={(e) => updateForm("name", e.target.value)}
+                                onChange={(e) =>
+                                  updateForm("name", e.target.value)
+                                }
                                 placeholder="Nguyễn Văn A"
                                 className={formErrors.name ? "input-error" : ""}
                               />
-                              {formErrors.name && <p className="field-error">{formErrors.name}</p>}
+                              {formErrors.name && (
+                                <p className="field-error">{formErrors.name}</p>
+                              )}
                             </div>
                             <div className="checkout-form__group">
-                              <label>Số điện thoại <span className="req">*</span></label>
+                              <label>
+                                Số điện thoại <span className="req">*</span>
+                              </label>
                               <input
                                 type="tel"
                                 value={form.phone}
-                                onChange={(e) => updateForm("phone", e.target.value)}
+                                onChange={(e) =>
+                                  updateForm("phone", e.target.value)
+                                }
                                 placeholder="Nhập số điện thoại"
-                                className={formErrors.phone ? "input-error" : ""}
+                                className={
+                                  formErrors.phone ? "input-error" : ""
+                                }
                               />
-                              {formErrors.phone && <p className="field-error">{formErrors.phone}</p>}
+                              {formErrors.phone && (
+                                <p className="field-error">
+                                  {formErrors.phone}
+                                </p>
+                              )}
                             </div>
                           </div>
 
                           <div className="checkout-form__group">
-                            <label>Địa chỉ nhận hàng <span className="req">*</span></label>
+                            <label>
+                              Địa chỉ nhận hàng <span className="req">*</span>
+                            </label>
                             <textarea
                               rows={3}
                               value={form.address}
-                              onChange={(e) => updateForm("address", e.target.value)}
+                              onChange={(e) =>
+                                updateForm("address", e.target.value)
+                              }
                               placeholder="Nhập địa chỉ nhận hàng"
-                              className={formErrors.address ? "input-error" : ""}
+                              className={
+                                formErrors.address ? "input-error" : ""
+                              }
                             />
-                            {formErrors.address && <p className="field-error">{formErrors.address}</p>}
+                            {formErrors.address && (
+                              <p className="field-error">
+                                {formErrors.address}
+                              </p>
+                            )}
                           </div>
 
                           <div className="checkout-form__group">
@@ -676,7 +774,9 @@ export default function Cart() {
                             <textarea
                               rows={3}
                               value={form.note}
-                              onChange={(e) => updateForm("note", e.target.value)}
+                              onChange={(e) =>
+                                updateForm("note", e.target.value)
+                              }
                               placeholder="Yêu cầu đặc biệt, thời gian giao hàng..."
                             />
                           </div>
@@ -684,17 +784,28 @@ export default function Cart() {
                           <div className="checkout-order-summary">
                             <h3>Tóm tắt đơn hàng</h3>
                             {cart.map((item) => (
-                              <div key={item.productId} className="checkout-order-row">
-                                <span>{item.emoji} {item.name} × {item.qty}</span>
+                              <div
+                                key={item.productId}
+                                className="checkout-order-row"
+                              >
                                 <span>
-                                  {(Number(item.price) * Number(item.qty)).toLocaleString("vi-VN")}₫
+                                  {item.emoji} {item.name} × {item.qty}
+                                </span>
+                                <span>
+                                  {(
+                                    Number(item.price) * Number(item.qty)
+                                  ).toLocaleString("vi-VN")}
+                                  ₫
                                 </span>
                               </div>
                             ))}
                           </div>
                         </div>
 
-                        <button className="cart-btn-back" onClick={() => setStep("cart")}>
+                        <button
+                          className="cart-btn-back"
+                          onClick={() => setStep("cart")}
+                        >
                           ← Quay lại giỏ hàng
                         </button>
                       </>
@@ -708,10 +819,18 @@ export default function Cart() {
 
                       <div className="cart-summary__rows">
                         {cart.map((item) => (
-                          <div key={item.productId} className="cart-summary__row">
-                            <span>{item.emoji} {item.name} × {item.qty}</span>
+                          <div
+                            key={item.productId}
+                            className="cart-summary__row"
+                          >
                             <span>
-                              {(Number(item.price) * Number(item.qty)).toLocaleString("vi-VN")}₫
+                              {item.emoji} {item.name} × {item.qty}
+                            </span>
+                            <span>
+                              {(
+                                Number(item.price) * Number(item.qty)
+                              ).toLocaleString("vi-VN")}
+                              ₫
                             </span>
                           </div>
                         ))}
@@ -735,13 +854,17 @@ export default function Cart() {
                           className="cart-btn cart-btn--primary cart-btn--full"
                           onClick={() => {
                             if (!currentUser) {
-                              navigate("/login-user", { state: { from: "/cart" } });
+                              navigate("/login-user", {
+                                state: { from: "/cart" },
+                              });
                               return;
                             }
                             setStep("checkout");
                           }}
                         >
-                          {currentUser ? "Tiến hành đặt hàng →" : "🔒 Đăng nhập để đặt hàng"}
+                          {currentUser
+                            ? "Tiến hành đặt hàng →"
+                            : "🔒 Đăng nhập để đặt hàng"}
                         </button>
                       )}
 

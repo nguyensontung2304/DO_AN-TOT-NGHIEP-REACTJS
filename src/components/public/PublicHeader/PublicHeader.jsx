@@ -161,7 +161,9 @@ export default function PublicHeader() {
                   {currentUser.name?.charAt(0).toUpperCase()}
                 </span>
 
-                <span className="pub-header__user-name">{currentUser.name}</span>
+                <span className="pub-header__user-name">
+                  {currentUser.name}
+                </span>
 
                 <span className="pub-header__user-caret">▾</span>
               </button>
@@ -195,7 +197,11 @@ export default function PublicHeader() {
           )}
 
           {/* ADMIN */}
-          <Link to="/login" className="pub-header__admin-btn" title="Quản trị">
+          <Link
+            to="/login-admin"
+            className="pub-header__admin-btn"
+            title="Quản trị"
+          >
             🏭
           </Link>
 

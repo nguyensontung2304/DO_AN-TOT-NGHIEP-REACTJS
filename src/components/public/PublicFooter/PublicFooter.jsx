@@ -105,9 +105,15 @@ export default function PublicFooter() {
             bàn, ghế, tủ, kệ cho mọi không gian sống.
           </p>
           <div className="pub-footer__socials">
-            <a href="#" aria-label="Facebook">📘</a>
-            <a href="#" aria-label="Zalo">💬</a>
-            <a href="#" aria-label="Youtube">▶️</a>
+            <a href="#" aria-label="Facebook">
+              📘
+            </a>
+            <a href="#" aria-label="Zalo">
+              💬
+            </a>
+            <a href="#" aria-label="Youtube">
+              ▶️
+            </a>
           </div>
         </div>
 
