@@ -1,15 +1,14 @@
 import { useState, useEffect } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useSelector } from "react-redux";
-import axios from "axios";
+import { loginUser } from "../../../api/authApi";
+import { ROUTES } from "../../../constants/router";
 import "./LoginUser.scss";
-
-const API_BASE_URL = "http://localhost:5000";
 
 export default function LoginUser() {
   const navigate = useNavigate();
   const location = useLocation();
-  const from = location.state?.from || "/";
+  const from = location.state?.from || ROUTES.USER.HOME;
   const currentUser = useSelector((state) => state.user.currentUser);
 
   const [form, setForm] = useState({ email: "", password: "" });
@@ -28,7 +27,7 @@ export default function LoginUser() {
     setLoading(true);
 
     try {
-      const response = await axios.post(`${API_BASE_URL}/users/login`, {
+      const response = await loginUser({
         email: form.email,
         password: form.password,
       });
@@ -50,7 +49,10 @@ export default function LoginUser() {
   return (
     <div className="login-page">
       <div className="login-card">
-        <button className="login-back" onClick={() => navigate("/")}>
+        <button
+          className="login-back"
+          onClick={() => navigate(ROUTES.USER.HOME)}
+        >
           ← Về trang chủ
         </button>
 
@@ -96,14 +98,15 @@ export default function LoginUser() {
         </form>
 
         <p className="login-switch">
-          Chưa có tài khoản? <Link to="/register">Đăng ký miễn phí</Link>
+          Chưa có tài khoản?{" "}
+          <Link to={ROUTES.USER.REGISTER}>Đăng ký miễn phí</Link>
         </p>
 
         <div className="login-divider">
           <span>hoặc</span>
         </div>
 
-        <Link to="/login" className="login-admin-link">
+        <Link to={ROUTES.USER.LOGIN_ADMIN} className="login-admin-link">
           🏭 Đăng nhập quản trị (Admin)
         </Link>
 

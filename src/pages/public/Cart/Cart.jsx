@@ -1,10 +1,18 @@
 import { useEffect, useState, useCallback } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useSelector } from "react-redux";
-import axios from "axios";
+import { ROUTES } from "../../../constants/router";
+
+import {
+  getCartByUserId,
+  getOrdersByUserId,
+  updateCartQty,
+  removeFromCart,
+  createOrder,
+} from "../../../api";
 import "./cart.scss";
 
-// ── Helper: đọc/ghi lịch sử đơn hàng từ localStorage ─────────────────────────
+//  Helper: đọc/ghi lịch sử đơn hàng từ localStorage
 const ORDERS_KEY = (userId) => `orders_${userId}`;
 
 function getLocalOrders(userId) {
@@ -21,7 +29,7 @@ function saveLocalOrder(userId, order) {
   localStorage.setItem(ORDERS_KEY(userId), JSON.stringify([order, ...prev]));
 }
 
-// ── Badge trạng thái đơn hàng ─────────────────────────────────────────────────
+//  Badge trạng thái đơn hàng
 const STATUS_LABEL = {
   pending: { text: "Chờ xác nhận", cls: "order-status--pending" },
   confirmed: { text: "Đã xác nhận", cls: "order-status--confirmed" },
@@ -35,20 +43,20 @@ function OrderStatusBadge({ status = "pending" }) {
   return <span className={`order-status ${info.cls}`}>{info.text}</span>;
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
+//
 export default function Cart() {
   const navigate = useNavigate();
   const currentUser = useSelector((state) => state.user.currentUser);
 
-  // ── Tab hiện tại: "cart" | "orders" ──────────────────────────────────────
+  //  Tab hiện tại: "cart" | "orders"
   const [activeTab, setActiveTab] = useState("cart");
 
-  // ── State giỏ hàng ────────────────────────────────────────────────────────
+  //  State giỏ hàng
   const [cart, setCart] = useState([]);
   const [loading, setLoading] = useState(true);
   const [step, setStep] = useState("cart"); // "cart" | "checkout" | "success"
 
-  // ── State đơn hàng ────────────────────────────────────────────────────────
+  //  State đơn hàng
   const [orders, setOrders] = useState([]);
   const [ordersLoading, setOrdersLoading] = useState(false);
   // id đơn đang mở rộng chi tiết
@@ -74,7 +82,7 @@ export default function Cart() {
     address: "",
   });
 
-  // ── Helper cập nhật form ──────────────────────────────────────────────────
+  //  Helper cập nhật form
   const updateForm = (field, value) => {
     setForm((prev) => ({ ...prev, [field]: value }));
     if (formErrors[field]) {
@@ -82,7 +90,7 @@ export default function Cart() {
     }
   };
 
-  // ── Sync profile → form khi chuyển sang checkout ──────────────────────────
+  //  Sync profile → form khi chuyển sang checkout
   const [formInitialized, setFormInitialized] = useState(false);
 
   useEffect(() => {
@@ -101,7 +109,7 @@ export default function Cart() {
     if (step === "cart") setFormInitialized(false);
   }, [step]);
 
-  // ── Validate form ─────────────────────────────────────────────────────────
+  //  Validate form
   const validateForm = () => {
     const errors = { name: "", phone: "", address: "" };
     let valid = true;
@@ -121,7 +129,7 @@ export default function Cart() {
     return valid;
   };
 
-  // ── Lấy giỏ hàng từ API ───────────────────────────────────────────────────
+  //  Lấy giỏ hàng từ API
   const getCart = useCallback(async () => {
     if (!currentUser?.id) {
       setCart([]);
@@ -130,9 +138,7 @@ export default function Cart() {
     }
     try {
       setLoading(true);
-      const res = await axios.get(
-        `http://localhost:5000/cart/${currentUser.id}`,
-      );
+      const res = await getCartByUserId(currentUser.id);
       setCart(Array.isArray(res.data) ? res.data : []);
     } catch (err) {
       console.error("Lỗi lấy giỏ hàng:", err);
@@ -155,7 +161,7 @@ export default function Cart() {
     };
   }, [getCart]);
 
-  // ── Lấy danh sách đơn hàng ────────────────────────────────────────────────
+  //  Lấy danh sách đơn hàng
   const loadOrders = useCallback(async () => {
     if (!currentUser?.id) {
       setOrders([]);
@@ -164,9 +170,7 @@ export default function Cart() {
     setOrdersLoading(true);
     try {
       // Thử lấy từ API trước
-      const res = await axios.get(
-        `http://localhost:5000/orders/${currentUser.id}`,
-      );
+      const res = await getOrdersByUserId(currentUser.id);
       const apiOrders = Array.isArray(res.data) ? res.data : [];
       if (apiOrders.length > 0) {
         setOrders(apiOrders);
@@ -187,20 +191,20 @@ export default function Cart() {
     if (activeTab === "orders") loadOrders();
   }, [activeTab, loadOrders]);
 
-  // ── Tính tổng tiền giỏ ────────────────────────────────────────────────────
+  //  Tính tổng tiền giỏ
   const cartTotal = cart.reduce(
     (total, item) => total + Number(item.price) * Number(item.qty),
     0,
   );
 
-  // ── Cập nhật qty ──────────────────────────────────────────────────────────
-  const updateCartQty = async (productId, newQty) => {
+  //  Cập nhật qty
+  const updateCartQuantity = async (productId, newQty) => {
     if (newQty <= 0) {
-      await removeFromCart(productId);
+      await removeCartItem(productId);
       return;
     }
     try {
-      await axios.put("http://localhost:5000/cart", {
+      await updateCartQty({
         userId: currentUser.id,
         productId,
         qty: newQty,
@@ -216,12 +220,10 @@ export default function Cart() {
     }
   };
 
-  // ── Xóa sản phẩm khỏi giỏ ────────────────────────────────────────────────
-  const removeFromCart = async (productId) => {
+  //  Xóa sản phẩm khỏi giỏ
+  const removeCartItem = async (productId) => {
     try {
-      await axios.delete(
-        `http://localhost:5000/cart/${currentUser.id}/${productId}`,
-      );
+      await removeFromCart(currentUser.id, productId);
       setCart((prev) => prev.filter((item) => item.productId !== productId));
     } catch (err) {
       console.error("Lỗi xóa sản phẩm:", err);
@@ -229,15 +231,11 @@ export default function Cart() {
     }
   };
 
-  // ── Xóa toàn bộ giỏ trên server ──────────────────────────────────────────
+  //  Xóa toàn bộ giỏ trên server
   const clearCartOnServer = async () => {
     try {
       await Promise.all(
-        cart.map((item) =>
-          axios.delete(
-            `http://localhost:5000/cart/${currentUser.id}/${item.productId}`,
-          ),
-        ),
+        cart.map((item) => removeFromCart(currentUser.id, item.productId)),
       );
       window.dispatchEvent(new Event("cartUpdated"));
     } catch (err) {
@@ -245,16 +243,16 @@ export default function Cart() {
     }
   };
 
-  // ── Đặt hàng ──────────────────────────────────────────────────────────────
+  //  Đặt hàng
   const handleOrder = async () => {
     if (!currentUser) {
-      navigate("/login-user", { state: { from: "/cart" } });
+      navigate(ROUTES.USER.LOGIN_USER, { state: { from: ROUTES.USER.CART } });
       return;
     }
     if (!validateForm()) return;
 
     try {
-      const res = await axios.post("http://localhost:5000/orders", {
+      const res = await createOrder({
         userId: currentUser.id,
         name: form.name,
         phone: form.phone,
@@ -296,7 +294,7 @@ export default function Cart() {
     }
   };
 
-  // ── Loading ────────────────────────────────────────────────────────────────
+  //  Loading
   if (loading) {
     return (
       <div className="cart-page">
@@ -308,7 +306,7 @@ export default function Cart() {
     );
   }
 
-  // ── Đặt hàng thành công ───────────────────────────────────────────────────
+  //  Đặt hàng thành công
   if (step === "success") {
     return (
       <div className="cart-page">
@@ -331,7 +329,10 @@ export default function Cart() {
             >
               📦 Xem đơn hàng của tôi
             </button>
-            <Link to="/products" className="cart-btn cart-btn--outline">
+            <Link
+              to={ROUTES.USER.PRODUCT_LIST}
+              className="cart-btn cart-btn--outline"
+            >
               Tiếp tục mua sắm
             </Link>
           </div>
@@ -340,13 +341,13 @@ export default function Cart() {
     );
   }
 
-  // ── Giao diện chính ───────────────────────────────────────────────────────
+  //  Giao diện chính
   return (
     <div className="cart-page">
       <div className="cart-inner">
         {/* Breadcrumb */}
         <div className="cart-breadcrumb">
-          <Link to="/">Trang chủ</Link>
+          <Link to={ROUTES.USER.HOME}>Trang chủ</Link>
           <span>›</span>
           <span>Giỏ hàng</span>
           {activeTab === "orders" && (
@@ -363,7 +364,7 @@ export default function Cart() {
           )}
         </div>
 
-        {/* ── TABS: Giỏ hàng / Đơn hàng ──────────────────────────────────── */}
+        {/*  TABS: Giỏ hàng / Đơn hàng  */}
         <div className="cart-tabs">
           <button
             className={`cart-tab ${activeTab === "cart" ? "cart-tab--active" : ""}`}
@@ -395,7 +396,10 @@ export default function Cart() {
                 <span>🔒</span>
                 <h2>Chưa đăng nhập</h2>
                 <p>Bạn cần đăng nhập để xem đơn hàng.</p>
-                <Link to="/login-user" className="cart-btn cart-btn--primary">
+                <Link
+                  to={ROUTES.USER.LOGIN_USER}
+                  className="cart-btn cart-btn--primary"
+                >
                   Đăng nhập
                 </Link>
               </div>
@@ -409,7 +413,10 @@ export default function Cart() {
                 <span>📭</span>
                 <h2>Chưa có đơn hàng nào</h2>
                 <p>Hãy mua sắm và đặt hàng để xem lịch sử tại đây.</p>
-                <Link to="/products" className="cart-btn cart-btn--primary">
+                <Link
+                  to={ROUTES.USER.PRODUCT_LIST}
+                  className="cart-btn cart-btn--primary"
+                >
                   Khám phá sản phẩm
                 </Link>
               </div>
@@ -553,7 +560,10 @@ export default function Cart() {
                 <span>🛒</span>
                 <h2>Giỏ hàng trống</h2>
                 <p>Bạn chưa thêm sản phẩm nào vào giỏ.</p>
-                <Link to="/products" className="cart-btn cart-btn--primary">
+                <Link
+                  to={ROUTES.USER.PRODUCT_LIST}
+                  className="cart-btn cart-btn--primary"
+                >
                   Khám phá sản phẩm
                 </Link>
               </div>
@@ -584,7 +594,7 @@ export default function Cart() {
                 </div>
 
                 <div className="cart-layout">
-                  {/* ── MAIN ────────────────────────────────────────────── */}
+                  {/*  MAIN  */}
                   <div className="cart-main">
                     {/* BƯỚC 1: Xem giỏ hàng */}
                     {step === "cart" && (
@@ -630,7 +640,7 @@ export default function Cart() {
                                 <div className="cart-qty">
                                   <button
                                     onClick={() =>
-                                      updateCartQty(
+                                      updateCartQuantity(
                                         item.productId,
                                         item.qty - 1,
                                       )
@@ -641,7 +651,7 @@ export default function Cart() {
                                   <span>{item.qty}</span>
                                   <button
                                     onClick={() =>
-                                      updateCartQty(
+                                      updateCartQuantity(
                                         item.productId,
                                         item.qty + 1,
                                       )
@@ -658,7 +668,7 @@ export default function Cart() {
                                 </p>
                                 <button
                                   className="cart-item__remove"
-                                  onClick={() => removeFromCart(item.productId)}
+                                  onClick={() => removeCartItem(item.productId)}
                                   aria-label="Xóa sản phẩm"
                                 >
                                   🗑️
@@ -668,7 +678,10 @@ export default function Cart() {
                           ))}
                         </div>
 
-                        <Link to="/products" className="cart-continue">
+                        <Link
+                          to={ROUTES.USER.PRODUCT_LIST}
+                          className="cart-continue"
+                        >
                           ← Tiếp tục mua sắm
                         </Link>
                       </>
@@ -696,7 +709,7 @@ export default function Cart() {
                               Bạn chưa cập nhật hồ sơ. Vui lòng điền đầy đủ
                               thông tin bên dưới để đặt hàng.{" "}
                               <Link
-                                to="/profile"
+                                to={ROUTES.USER.PROFILE}
                                 className="checkout-profile-link"
                               >
                                 Cập nhật hồ sơ ngay
@@ -812,7 +825,7 @@ export default function Cart() {
                     )}
                   </div>
 
-                  {/* ── SIDEBAR ─────────────────────────────────────────── */}
+                  {/*  SIDEBAR  */}
                   <aside className="cart-sidebar">
                     <div className="cart-summary">
                       <h3>Tổng đơn hàng</h3>
@@ -854,8 +867,8 @@ export default function Cart() {
                           className="cart-btn cart-btn--primary cart-btn--full"
                           onClick={() => {
                             if (!currentUser) {
-                              navigate("/login-user", {
-                                state: { from: "/cart" },
+                              navigate(ROUTES.USER.LOGIN_USER, {
+                                state: { from: ROUTES.USER.CART },
                               });
                               return;
                             }

@@ -1,7 +1,8 @@
 import { useState, useEffect } from "react";
 import { useSelector } from "react-redux";
+import { sendContactMessage } from "../../../api/contactApi";
 import "./contact.scss";
-import Map from "../map/map";
+import Map from "./map/map";
 
 export default function Contact() {
   const currentUser = useSelector((state) => state.user.currentUser);
@@ -10,7 +11,7 @@ export default function Contact() {
   const profileComplete =
     currentUser && currentUser.name?.trim() && currentUser.phone?.trim();
 
-  // ── Form state ─────────────────────────────────────────────────────────────
+  //  Form state
   const [form, setForm] = useState({
     name: "",
     phone: "",
@@ -26,7 +27,7 @@ export default function Contact() {
     message: "",
   });
 
-  // ── Auto-fill thông tin user khi đăng nhập ─────────────────────────────────
+  //  Auto-fill thông tin user khi đăng nhập
   // Chỉ điền khi form chưa có giá trị (tránh ghi đè khi user đã sửa)
   useEffect(() => {
     if (currentUser) {
@@ -39,7 +40,7 @@ export default function Contact() {
     }
   }, [currentUser]);
 
-  // ── Validate form ──────────────────────────────────────────────────────────
+  //  Validate form
   const validateForm = () => {
     const errors = { name: "", phone: "", message: "" };
     let valid = true;
@@ -61,7 +62,7 @@ export default function Contact() {
     return valid;
   };
 
-  // ── Helper cập nhật field + xóa lỗi ──────────────────────────────────────
+  //  Helper cập nhật field + xóa lỗi
   const updateField = (field, value) => {
     setForm((f) => ({ ...f, [field]: value }));
     if (formErrors[field]) {
@@ -69,19 +70,23 @@ export default function Contact() {
     }
   };
 
-  // ── Gửi form liên hệ ───────────────────────────────────────────────────────
-  const handleSubmit = (e) => {
+  //  Gửi form liên hệ
+  const handleSubmit = async (e) => {
     e.preventDefault();
     if (!validateForm()) return;
 
-    // TODO: gọi API gửi tin nhắn khi backend sẵn sàng
-    console.log("Gửi liên hệ:", form);
-    setSent(true);
+    try {
+      await sendContactMessage(form);
+      setSent(true);
+    } catch (error) {
+      console.error("Lỗi gửi tin nhắn:", error);
+      alert("Gửi tin nhắn thất bại. Vui lòng thử lại sau.");
+    }
   };
 
   return (
     <div className="contact-page">
-      {/* ── HERO ────────────────────────────────────────────────────────────── */}
+      {/*  HERO  */}
       <section className="contact-hero">
         <div className="contact-hero__inner">
           <span className="contact-hero__tag">📬 Hỗ trợ 7 ngày/tuần</span>
@@ -94,7 +99,7 @@ export default function Contact() {
 
       <div className="contact-inner">
         <div className="contact-layout">
-          {/* ── THÔNG TIN LIÊN HỆ ─────────────────────────────────────────── */}
+          {/*  THÔNG TIN LIÊN HỆ  */}
           <div className="contact-info">
             <h2>Thông tin liên hệ</h2>
 
@@ -145,7 +150,7 @@ export default function Contact() {
             </div>
           </div>
 
-          {/* ── FORM GỬI TIN NHẮN ─────────────────────────────────────────── */}
+          {/*  FORM GỬI TIN NHẮN  */}
           <div className="contact-form-wrap">
             <h2>Gửi tin nhắn cho chúng tôi</h2>
 
@@ -276,7 +281,7 @@ export default function Contact() {
           </div>
         </div>
 
-        {/* ── BẢN ĐỒ ────────────────────────────────────────────────────────── */}
+        {/*  BẢN ĐỒ  */}
         <div className="contact-map">
           <div className="contact-map__label">
             <span>🗺️</span>

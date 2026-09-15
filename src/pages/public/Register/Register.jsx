@@ -1,9 +1,9 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import axios from "axios";
-import "../LoginUser/LoginUser.scss";
+import { registerUser } from "../../../api/authApi";
+import { ROUTES } from "../../../constants/router";
 
-const API_BASE_URL = "http://localhost:5000";
+import "../LoginUser/LoginUser.scss";
 
 export default function Register() {
   const navigate = useNavigate();
@@ -31,7 +31,7 @@ export default function Register() {
     try {
       setLoading(true);
 
-      const response = await axios.post(`${API_BASE_URL}/users/register`, {
+      const response = await registerUser({
         name: form.name,
         email: form.email,
         password: form.password,
@@ -42,7 +42,7 @@ export default function Register() {
 
       window.dispatchEvent(new Event("userChanged"));
 
-      navigate("/login-user");
+      navigate(ROUTES.USER.LOGIN_USER);
     } catch (error) {
       setError(error.response?.data?.message || "Đăng ký thất bại");
     } finally {
@@ -53,8 +53,10 @@ export default function Register() {
   return (
     <div className="login-page">
       <div className="login-card">
-        {/* Back button */}
-        <button className="login-back" onClick={() => navigate("/")}>
+        <button
+          className="login-back"
+          onClick={() => navigate(ROUTES.USER.HOME)}
+        >
           ← Về trang chủ
         </button>
 
@@ -124,7 +126,8 @@ export default function Register() {
         </form>
 
         <p className="login-switch">
-          Đã có tài khoản? <Link to="/login-user">Đăng nhập ngay</Link>
+          Đã có tài khoản?{" "}
+          <Link to={ROUTES.USER.LOGIN_USER}>Đăng nhập ngay</Link>
         </p>
       </div>
     </div>

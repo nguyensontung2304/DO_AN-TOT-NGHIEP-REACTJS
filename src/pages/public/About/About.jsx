@@ -1,4 +1,6 @@
 import { Link } from "react-router-dom";
+import { ROUTES } from "../../../constants/router";
+
 import "./about.scss";
 
 export default function About() {
@@ -153,13 +155,13 @@ export default function About() {
         <p>Khám phá 22+ mẫu sản phẩm nội thất cao cấp của chúng tôi.</p>
         <div className="about-cta__btns">
           <Link
-            to="/products"
+            to={ROUTES.USER.PRODUCT_LIST}
             className="about-cta__btn about-cta__btn--primary"
           >
             Xem sản phẩm
           </Link>
           <Link
-            to="/contact"
+            to={ROUTES.USER.CONTACT}
             className="about-cta__btn about-cta__btn--outline"
           >
             Liên hệ ngay

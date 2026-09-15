@@ -1,6 +1,8 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useApp } from "../../../context/useApp";
+import { ROUTES } from "../../../constants/router";
+
 import "./loginAdmin.scss";
 
 export default function LoginAdmin() {
@@ -18,7 +20,7 @@ export default function LoginAdmin() {
     setTimeout(() => {
       const loginUser = login(username, password);
       if (loginUser) {
-        navigate("/admin");
+        navigate(ROUTES.ADMIN.DASHBOARD);
       } else {
         setError("Tên đăng nhập hoặc mật khẩu không đúng.");
       }
@@ -30,7 +32,10 @@ export default function LoginAdmin() {
     <div className="login-page">
       <div className="login-card">
         {/* Back button */}
-        <button className="login-back" onClick={() => navigate("/")}>
+        <button
+          className="login-back"
+          onClick={() => navigate(ROUTES.USER.HOME)}
+        >
           ← Về trang chủ
         </button>
 
@@ -79,7 +84,7 @@ export default function LoginAdmin() {
           <span>hoặc</span>
         </div>
 
-        <Link to="/login-user" className="login-admin-link">
+        <Link to={ROUTES.USER.LOGIN_USER} className="login-admin-link">
           🛒 Đăng nhập mua hàng (Khách)
         </Link>
       </div>

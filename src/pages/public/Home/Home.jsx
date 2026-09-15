@@ -1,23 +1,24 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { useSelector } from "react-redux";
-import axios from "axios";
+import { getProducts, addToCart } from "../../../api";
+import { ROUTES, getPath } from "../../../constants/router";
 import "./home.scss";
 
 const PRODUCTS_PER_PAGE = 12;
 
-// ── ProductCard ────────────────────────────────────────────────────────────────
+//  ProductCard
 function ProductCard({ product }) {
   const currentUser = useSelector((state) => state.user.currentUser);
   const [added, setAdded] = useState(false);
 
   const handleAdd = async () => {
     if (!currentUser?.id) {
-      window.location.href = "/login-user";
+      window.location.href = ROUTES.USER.LOGIN_USER;
       return;
     }
     try {
-      await axios.post("http://localhost:5000/cart", {
+      await addToCart({
         userId: currentUser.id,
         productId: product.id,
         qty: 1,
@@ -37,7 +38,7 @@ function ProductCard({ product }) {
       )}
 
       <Link
-        to={`/products/${product.id}`}
+        to={getPath(ROUTES.USER.PRODUCT_DETAIL, { id: product.id })}
         className="product-card__img"
         aria-label={`Xem chi tiết ${product.name}`}
       >
@@ -48,7 +49,9 @@ function ProductCard({ product }) {
         <span className="product-card__cat">{product.category}</span>
 
         <h3 className="product-card__name">
-          <Link to={`/products/${product.id}`}>{product.name}</Link>
+          <Link to={getPath(ROUTES.USER.PRODUCT_DETAIL, { id: product.id })}>
+            {product.name}
+          </Link>
         </h3>
 
         <p className="product-card__desc">{product.description}</p>
@@ -59,14 +62,21 @@ function ProductCard({ product }) {
             <>
               <s>{Number(product.old_price).toLocaleString("vi-VN")}₫</s>
               <span className="product-card__discount">
-                -{Math.round((1 - Number(product.price) / Number(product.old_price)) * 100)}%
+                -
+                {Math.round(
+                  (1 - Number(product.price) / Number(product.old_price)) * 100,
+                )}
+                %
               </span>
             </>
           )}
         </div>
 
         <div className="product-card__btns">
-          <Link to={`/products/${product.id}`} className="product-card__detail-btn">
+          <Link
+            to={getPath(ROUTES.USER.PRODUCT_DETAIL, { id: product.id })}
+            className="product-card__detail-btn"
+          >
             Chi tiết
           </Link>
 
@@ -79,9 +89,9 @@ function ProductCard({ product }) {
             </button>
           ) : (
             <Link
-              to="/login-user"
+              to={ROUTES.USER.LOGIN_USER}
               className="product-card__btn product-card__btn--guest"
-              state={{ from: "/" }}
+              state={{ from: ROUTES.USER.HOME }}
             >
               🔒 Đăng nhập
             </Link>
@@ -92,7 +102,7 @@ function ProductCard({ product }) {
   );
 }
 
-// ── Home ───────────────────────────────────────────────────────────────────────
+//  Home
 export default function Home() {
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -102,13 +112,13 @@ export default function Home() {
   const [sortBy, setSortBy] = useState("default");
   const [currentPage, setCurrentPage] = useState(1);
 
-  // ── Lấy sản phẩm ─────────────────────────────────────────────────────────
+  //  Lấy sản phẩm
   useEffect(() => {
     const fetchProducts = async () => {
       try {
         setLoading(true);
         setError("");
-        const res = await axios.get("http://localhost:5000/products");
+        const res = await getProducts();
         setProducts(res.data);
       } catch (err) {
         console.error("Lỗi lấy sản phẩm:", err);
@@ -120,18 +130,18 @@ export default function Home() {
     fetchProducts();
   }, []);
 
-  // ── Reset về trang 1 khi filter / search / sort thay đổi ─────────────────
+  //  Reset về trang 1 khi filter / search / sort thay đổi
   useEffect(() => {
     setCurrentPage(1);
   }, [activeCategory, search, sortBy]);
 
-  // ── Danh mục ─────────────────────────────────────────────────────────────
+  //  Danh mục
   const categories = [
     "Tất cả",
     ...new Set(products.map((p) => p.category).filter(Boolean)),
   ];
 
-  // ── Lọc ──────────────────────────────────────────────────────────────────
+  //  Lọc
   let filtered = products.filter((p) => {
     const matchCat =
       activeCategory === "Tất cả" || p.category === activeCategory;
@@ -142,7 +152,7 @@ export default function Home() {
     return matchCat && matchSearch;
   });
 
-  // ── Sắp xếp ──────────────────────────────────────────────────────────────
+  //  Sắp xếp
   if (sortBy === "price-asc")
     filtered = [...filtered].sort((a, b) => Number(a.price) - Number(b.price));
   if (sortBy === "price-desc")
@@ -150,7 +160,7 @@ export default function Home() {
   if (sortBy === "name")
     filtered = [...filtered].sort((a, b) => a.name.localeCompare(b.name, "vi"));
 
-  // ── Phân trang ────────────────────────────────────────────────────────────
+  //  Phân trang
   const totalPages = Math.ceil(filtered.length / PRODUCTS_PER_PAGE);
   const paginated = filtered.slice(
     (currentPage - 1) * PRODUCTS_PER_PAGE,
@@ -160,7 +170,9 @@ export default function Home() {
   const goToPage = (page) => {
     setCurrentPage(page);
     // Cuộn lên section sản phẩm
-    document.getElementById("products")?.scrollIntoView({ behavior: "smooth", block: "start" });
+    document
+      .getElementById("products")
+      ?.scrollIntoView({ behavior: "smooth", block: "start" });
   };
 
   // Tạo mảng số trang để render (luôn hiển thị tối đa 5 trang liên tiếp)
@@ -185,7 +197,6 @@ export default function Home() {
 
   return (
     <div className="home">
-      {/* ── HERO ──────────────────────────────────────────────────────────── */}
       <section className="home__hero">
         <div className="home__hero-content">
           <span className="home__hero-tag">
@@ -204,7 +215,7 @@ export default function Home() {
             <a href="#products" className="btn btn--primary">
               Xem sản phẩm
             </a>
-            <Link to="/contact" className="btn btn--outline">
+            <Link to={ROUTES.USER.CONTACT} className="btn btn--outline">
               Tư vấn miễn phí
             </Link>
           </div>
@@ -225,7 +236,6 @@ export default function Home() {
         </div>
       </section>
 
-      {/* ── STATS ─────────────────────────────────────────────────────────── */}
       <section className="home__stats">
         <div className="home__stats-inner">
           {[
@@ -242,12 +252,10 @@ export default function Home() {
         </div>
       </section>
 
-      {/* ── DANH SÁCH SẢN PHẨM ───────────────────────────────────────────── */}
       <section className="home__products-section" id="products">
         <div className="home__products-inner">
           <h2 className="home__section-title">Tất cả sản phẩm</h2>
 
-          {/* Thanh tìm kiếm + sắp xếp */}
           <div className="products-toolbar">
             <div className="products-search">
               <span>🔍</span>
@@ -276,7 +284,6 @@ export default function Home() {
             </select>
           </div>
 
-          {/* Tabs danh mục */}
           <div className="products-cats">
             {categories.map((cat) => {
               const count =
@@ -296,18 +303,16 @@ export default function Home() {
             })}
           </div>
 
-          {/* Số kết quả + thông tin trang */}
           {!loading && !error && (
             <p className="products-result-count">
               {filtered.length === 0
                 ? "Không có sản phẩm nào"
                 : filtered.length === products.length
-                ? `Hiển thị ${paginated.length} / ${products.length} sản phẩm — Trang ${currentPage}/${totalPages}`
-                : `${filtered.length} sản phẩm${search ? ` cho "${search}"` : ""} — Trang ${currentPage}/${totalPages || 1}`}
+                  ? `Hiển thị ${paginated.length} / ${products.length} sản phẩm — Trang ${currentPage}/${totalPages}`
+                  : `${filtered.length} sản phẩm${search ? ` cho "${search}"` : ""} — Trang ${currentPage}/${totalPages || 1}`}
             </p>
           )}
 
-          {/* Loading / lỗi / rỗng / grid */}
           {loading ? (
             <div className="products-empty">
               <span>⏳</span>
@@ -340,7 +345,6 @@ export default function Home() {
                 ))}
               </div>
 
-              {/* Phân trang */}
               {totalPages > 1 && (
                 <div className="pagination">
                   <button
@@ -354,7 +358,10 @@ export default function Home() {
 
                   {getPageNumbers().map((page, idx) =>
                     page === "..." ? (
-                      <span key={`ellipsis-${idx}`} className="pagination__ellipsis">
+                      <span
+                        key={`ellipsis-${idx}`}
+                        className="pagination__ellipsis"
+                      >
                         …
                       </span>
                     ) : (
@@ -385,7 +392,6 @@ export default function Home() {
         </div>
       </section>
 
-      {/* ── TẠI SAO CHỌN CHÚNG TÔI ───────────────────────────────────────── */}
       <section className="home__features-section">
         <div className="home__products-inner">
           <h2 className="home__section-title">Tại sao chọn Nội Thất Việt?</h2>
@@ -422,12 +428,11 @@ export default function Home() {
         </div>
       </section>
 
-      {/* ── CTA ───────────────────────────────────────────────────────────── */}
       <section className="home__cta">
         <div className="home__cta-inner">
           <h2>Bạn cần tư vấn thiết kế nội thất?</h2>
           <p>Đội ngũ chuyên gia sẵn sàng hỗ trợ 7 ngày/tuần.</p>
-          <Link to="/contact" className="btn btn--white">
+          <Link to={ROUTES.USER.CONTACT} className="btn btn--white">
             Liên hệ ngay
           </Link>
         </div>

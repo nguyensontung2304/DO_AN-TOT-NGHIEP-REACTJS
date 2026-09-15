@@ -1,13 +1,12 @@
-import axios from "axios";
 import { useEffect, useCallback } from "react";
 import { useDispatch } from "react-redux";
 import { setUser, clearUser } from "./redux/userSlice";
+import { getUserById } from "./api/authApi";
 
 import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { ROUTES } from "./constants/router";
 
-// ====================
 // PUBLIC LAYOUT
-// ====================
 import PublicLayout from "./layouts/public/PublicLayout";
 
 // Public pages
@@ -22,9 +21,7 @@ import Register from "./pages/public/Register/Register";
 import ProductDetail from "./pages/public/ProductDetail/ProductDetail";
 import Profile from "./pages/public/Profile/Profile";
 
-// ====================
 // ADMIN LAYOUT
-// ====================
 import AdminLayout from "./layouts/admin/AdminLayout";
 
 // Admin pages
@@ -47,9 +44,7 @@ function App() {
         return;
       }
 
-      const response = await axios.get(
-        `http://localhost:5000/users/login/${userId}`,
-      );
+      const response = await getUserById(userId);
 
       const user = response.data.user;
 
@@ -79,11 +74,9 @@ function App() {
   return (
     <BrowserRouter>
       <Routes>
-        {/* ==================== */}
         {/* PUBLIC */}
-        {/* ==================== */}
         <Route
-          path="/"
+          path={ROUTES.USER.HOME}
           element={
             <PublicLayout>
               <Home />
@@ -92,7 +85,7 @@ function App() {
         />
 
         <Route
-          path="/products"
+          path={ROUTES.USER.PRODUCT_LIST}
           element={
             <PublicLayout>
               <Products />
@@ -101,7 +94,7 @@ function App() {
         />
 
         <Route
-          path="/about"
+          path={ROUTES.USER.ABOUT}
           element={
             <PublicLayout>
               <About />
@@ -110,7 +103,7 @@ function App() {
         />
 
         <Route
-          path="/contact"
+          path={ROUTES.USER.CONTACT}
           element={
             <PublicLayout>
               <Contact />
@@ -119,7 +112,7 @@ function App() {
         />
 
         <Route
-          path="/cart"
+          path={ROUTES.USER.CART}
           element={
             <PublicLayout>
               <Cart />
@@ -128,7 +121,7 @@ function App() {
         />
 
         <Route
-          path="/login-admin"
+          path={ROUTES.USER.LOGIN_ADMIN}
           element={
             <PublicLayout>
               <LoginAdmin />
@@ -137,7 +130,7 @@ function App() {
         />
 
         <Route
-          path="/login-user"
+          path={ROUTES.USER.LOGIN_USER}
           element={
             <PublicLayout>
               <LoginUser />
@@ -146,7 +139,7 @@ function App() {
         />
 
         <Route
-          path="/register"
+          path={ROUTES.USER.REGISTER}
           element={
             <PublicLayout>
               <Register />
@@ -155,7 +148,7 @@ function App() {
         />
 
         <Route
-          path="/profile"
+          path={ROUTES.USER.PROFILE}
           element={
             <PublicLayout>
               <Profile />
@@ -164,7 +157,7 @@ function App() {
         />
 
         <Route
-          path="/products/:id"
+          path={ROUTES.USER.PRODUCT_DETAIL}
           element={
             <PublicLayout>
               <ProductDetail />
@@ -172,11 +165,9 @@ function App() {
           }
         />
 
-        {/* ==================== */}
         {/* ADMIN */}
-        {/* ==================== */}
         <Route
-          path="/admin"
+          path={ROUTES.ADMIN.DASHBOARD}
           element={
             <AdminLayout>
               <Dashboard />
@@ -185,7 +176,7 @@ function App() {
         />
 
         <Route
-          path="/admin/technical"
+          path={ROUTES.ADMIN.TECHNICAL}
           element={
             <AdminLayout>
               <Technical />
@@ -194,7 +185,7 @@ function App() {
         />
 
         <Route
-          path="/admin/warehouse"
+          path={ROUTES.ADMIN.WAREHOUSE}
           element={
             <AdminLayout>
               <Warehouse />
@@ -203,7 +194,7 @@ function App() {
         />
 
         <Route
-          path="/admin/purchasing"
+          path={ROUTES.ADMIN.PURCHASING}
           element={
             <AdminLayout>
               <Purchasing />
@@ -212,7 +203,7 @@ function App() {
         />
 
         <Route
-          path="/admin/factory"
+          path={ROUTES.ADMIN.FACTORY}
           element={
             <AdminLayout>
               <Factory />
@@ -221,7 +212,7 @@ function App() {
         />
 
         <Route
-          path="/admin/finished-goods"
+          path={ROUTES.ADMIN.FINISHED_GOODS}
           element={
             <AdminLayout>
               <FinishedGoods />

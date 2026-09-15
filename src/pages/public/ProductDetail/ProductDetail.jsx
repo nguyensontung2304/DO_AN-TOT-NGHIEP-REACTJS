@@ -2,8 +2,8 @@ import { useEffect, useState } from "react";
 
 import { useParams, Link, useNavigate } from "react-router-dom";
 import { useSelector } from "react-redux";
-import axios from "axios";
-
+import { getProductById, getProducts, addToCart } from "../../../api";
+import { ROUTES, getPath } from "../../../constants/router";
 import "./productDetail.scss";
 
 export default function ProductDetail() {
@@ -12,20 +12,14 @@ export default function ProductDetail() {
   const navigate = useNavigate();
 
   const [product, setProduct] = useState(null);
-
   const [related, setRelated] = useState([]);
-
   const [loading, setLoading] = useState(true);
-
   const [error, setError] = useState("");
-
   const [qty, setQty] = useState(1);
 
   const currentUser = useSelector((state) => state.user.currentUser);
 
-  // ======================
   // LẤY CHI TIẾT SẢN PHẨM
-  // ======================
   useEffect(() => {
     const getProductDetail = async () => {
       try {
@@ -34,16 +28,12 @@ export default function ProductDetail() {
         setError("");
 
         // Lấy sản phẩm hiện tại
-        const response = await axios.get(
-          `http://localhost:5000/products/${id}`,
-        );
+        const response = await getProductById(id);
 
         setProduct(response.data);
 
         // Lấy tất cả sản phẩm
-        const productsResponse = await axios.get(
-          "http://localhost:5000/products",
-        );
+        const productsResponse = await getProducts();
 
         // Lọc sản phẩm liên quan
         const relatedProducts = productsResponse.data
@@ -67,14 +57,12 @@ export default function ProductDetail() {
     getProductDetail();
   }, [id]);
 
-  // ======================
   // THÊM VÀO GIỎ HÀNG
-  // ======================
   const handleAddToCart = async () => {
     if (!currentUser?.id) {
-      navigate("/login-user", {
+      navigate(ROUTES.USER.LOGIN_USER, {
         state: {
-          from: `/products/${id}`,
+          from: getPath(ROUTES.USER.PRODUCT_DETAIL, { id }),
         },
       });
 
@@ -82,7 +70,7 @@ export default function ProductDetail() {
     }
 
     try {
-      await axios.post("http://localhost:5000/cart", {
+      await addToCart({
         userId: currentUser.id,
         productId: product.id,
         qty: qty,
@@ -98,20 +86,16 @@ export default function ProductDetail() {
     }
   };
 
-  // ======================
   // MUA NGAY
-  // ======================
   const handleBuyNow = async () => {
     const success = await handleAddToCart();
 
     if (success) {
-      navigate("/cart");
+      navigate(ROUTES.USER.CART);
     }
   };
 
-  // ======================
   // LOADING
-  // ======================
   if (loading) {
     return (
       <div className="pd-notfound">
@@ -122,9 +106,7 @@ export default function ProductDetail() {
     );
   }
 
-  // ======================
   // NOT FOUND
-  // ======================
   if (error || !product) {
     return (
       <div className="pd-notfound">
@@ -134,16 +116,14 @@ export default function ProductDetail() {
 
         <p>{error || "Sản phẩm này không tồn tại hoặc đã bị xóa."}</p>
 
-        <Link to="/products" className="pd-btn pd-btn--primary">
+        <Link to={ROUTES.USER.PRODUCT_LIST} className="pd-btn pd-btn--primary">
           ← Xem tất cả sản phẩm
         </Link>
       </div>
     );
   }
 
-  // ======================
   // GIẢM GIÁ
-  // ======================
   const discount = product.old_price
     ? Math.round((1 - Number(product.price) / Number(product.old_price)) * 100)
     : null;
@@ -151,14 +131,13 @@ export default function ProductDetail() {
   return (
     <div className="pd-page">
       {/* Breadcrumb */}
-
       <div className="pd-breadcrumb">
         <div className="pd-breadcrumb__inner">
-          <Link to="/">Trang chủ</Link>
+          <Link to={ROUTES.USER.HOME}>Trang chủ</Link>
 
           <span>›</span>
 
-          <Link to="/products">Sản phẩm</Link>
+          <Link to={ROUTES.USER.PRODUCT_LIST}>Sản phẩm</Link>
 
           <span>›</span>
 
@@ -171,10 +150,8 @@ export default function ProductDetail() {
       </div>
 
       {/* Main */}
-
       <div className="pd-main">
         {/* Gallery */}
-
         <div className="pd-gallery">
           <div className="pd-gallery__main">
             {product.badge && (
@@ -192,14 +169,12 @@ export default function ProductDetail() {
         </div>
 
         {/* Info */}
-
         <div className="pd-info">
           <span className="pd-info__cat">{product.category}</span>
 
           <h1 className="pd-info__name">{product.name}</h1>
 
           {/* Giá */}
-
           <div className="pd-info__price-row">
             <strong className="pd-info__price">
               {Number(product.price).toLocaleString("vi-VN")}₫
@@ -223,13 +198,11 @@ export default function ProductDetail() {
           </div>
 
           {/* Mô tả */}
-
           <p className="pd-info__desc">
             {product.long_description || product.description}
           </p>
 
           {/* Thông số */}
-
           {product.specs && product.specs.length > 0 && (
             <div className="pd-specs">
               <h3 className="pd-specs__title">Thông số kỹ thuật</h3>
@@ -249,7 +222,6 @@ export default function ProductDetail() {
           )}
 
           {/* Nguyên vật liệu */}
-
           {product.recipe && product.recipe.length > 0 && (
             <details className="pd-recipe">
               <summary>
@@ -271,10 +243,8 @@ export default function ProductDetail() {
           )}
 
           {/* Actions */}
-
           <div className="pd-actions">
             {/* Quantity */}
-
             <div className="pd-qty">
               <button
                 onClick={() =>
@@ -292,7 +262,6 @@ export default function ProductDetail() {
             </div>
 
             {/* Thêm giỏ */}
-
             {currentUser ? (
               <button
                 className="pd-btn pd-btn--primary pd-btn--add"
@@ -302,9 +271,9 @@ export default function ProductDetail() {
               </button>
             ) : (
               <Link
-                to="/login-user"
+                to={ROUTES.USER.LOGIN_USER}
                 state={{
-                  from: `/products/${product.id}`,
+                  from: getPath(ROUTES.USER.PRODUCT_DETAIL, { id: product.id }),
                 }}
                 className="pd-btn pd-btn--guest"
               >
@@ -314,7 +283,6 @@ export default function ProductDetail() {
           </div>
 
           {/* Mua ngay */}
-
           {currentUser && (
             <button className="pd-btn pd-btn--buy-now" onClick={handleBuyNow}>
               ⚡ Mua ngay
@@ -322,7 +290,6 @@ export default function ProductDetail() {
           )}
 
           {/* Cam kết */}
-
           <div className="pd-guarantees">
             {[
               {
@@ -356,7 +323,6 @@ export default function ProductDetail() {
       </div>
 
       {/* Sản phẩm liên quan */}
-
       {related.length > 0 && (
         <div className="pd-related">
           <div className="pd-related__inner">
@@ -365,7 +331,7 @@ export default function ProductDetail() {
             <div className="pd-related__grid">
               {related.map((item) => (
                 <Link
-                  to={`/products/${item.id}`}
+                  to={getPath(ROUTES.USER.PRODUCT_DETAIL, { id: item.id })}
                   key={item.id}
                   className="pd-related-card"
                 >

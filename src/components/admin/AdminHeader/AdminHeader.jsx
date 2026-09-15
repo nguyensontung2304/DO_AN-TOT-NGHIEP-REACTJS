@@ -1,29 +1,46 @@
 import { NavLink, useNavigate } from "react-router-dom";
 import { useApp } from "../../../context/useApp";
+import { ROUTES } from "../../../constants/router";
+
 import "./adminHeader.scss";
 
 const NAV_ITEMS = [
-  { to: "/admin",               label: "Dashboard",     icon: "📊" },
-  { to: "/admin/technical",     label: "Kỹ thuật",      icon: "⚙️"  },
-  { to: "/admin/warehouse",     label: "Thủ kho",       icon: "🏭"  },
-  { to: "/admin/purchasing",    label: "Mua hàng",      icon: "🛒"  },
-  { to: "/admin/factory",       label: "Nhà máy",       icon: "🔧"  },
-  { to: "/admin/finished-goods",label: "Thành phẩm",    icon: "📦"  },
+  { to: ROUTES.ADMIN.DASHBOARD, label: "Dashboard", icon: "📊" },
+  { to: ROUTES.ADMIN.TECHNICAL, label: "Kỹ thuật", icon: "⚙️" },
+  { to: ROUTES.ADMIN.WAREHOUSE, label: "Thủ kho", icon: "🏭" },
+  { to: ROUTES.ADMIN.PURCHASING, label: "Mua hàng", icon: "🛒" },
+  { to: ROUTES.ADMIN.FACTORY, label: "Nhà máy", icon: "🔧" },
+  { to: ROUTES.ADMIN.FINISHED_GOODS, label: "Thành phẩm", icon: "📦" },
 ];
 
 export default function AdminHeader() {
-  const { logout, productionRequests, purchaseRequests, handoverOrders, designRequests } = useApp();
+  const {
+    logout,
+    productionRequests,
+    purchaseRequests,
+    handoverOrders,
+    designRequests,
+  } = useApp();
   const navigate = useNavigate();
 
-  const pendingPR  = productionRequests.filter((r) => r.status === "pending").length;
-  const pendingPurchase = purchaseRequests.filter((r) => r.status === "pending").length;
-  const pendingHandover = handoverOrders.filter((o) => o.status === "pending").length;
-  const pendingDesign   = designRequests.filter((r) => r.status === "pending").length;
-  const totalAlerts = pendingPR + pendingPurchase + pendingHandover + pendingDesign;
+  const pendingPR = productionRequests.filter(
+    (r) => r.status === "pending",
+  ).length;
+  const pendingPurchase = purchaseRequests.filter(
+    (r) => r.status === "pending",
+  ).length;
+  const pendingHandover = handoverOrders.filter(
+    (o) => o.status === "pending",
+  ).length;
+  const pendingDesign = designRequests.filter(
+    (r) => r.status === "pending",
+  ).length;
+  const totalAlerts =
+    pendingPR + pendingPurchase + pendingHandover + pendingDesign;
 
   const handleLogout = () => {
     logout();
-    navigate("/");
+    navigate(ROUTES.USER.HOME);
   };
 
   return (
@@ -59,16 +76,17 @@ export default function AdminHeader() {
         {NAV_ITEMS.map(({ to, label, icon }) => {
           // badge count per nav item
           let badge = 0;
-          if (to === "/admin/warehouse") badge = pendingPR + pendingHandover;
-          if (to === "/admin/purchasing") badge = pendingPurchase;
-          if (to === "/admin/technical")  badge = pendingDesign;
-          if (to === "/admin/factory")    badge = pendingHandover;
+          if (to === ROUTES.ADMIN.WAREHOUSE)
+            badge = pendingPR + pendingHandover;
+          if (to === ROUTES.ADMIN.PURCHASING) badge = pendingPurchase;
+          if (to === ROUTES.ADMIN.TECHNICAL) badge = pendingDesign;
+          if (to === ROUTES.ADMIN.FACTORY) badge = pendingHandover;
 
           return (
             <NavLink
               key={to}
               to={to}
-              end={to === "/admin"}
+              end={to === ROUTES.ADMIN.DASHBOARD}
               className={({ isActive }) =>
                 `admin-header__nav-item ${isActive ? "active" : ""}`
               }

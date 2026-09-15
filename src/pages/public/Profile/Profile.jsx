@@ -1,9 +1,9 @@
-/* eslint-disable react-hooks/set-state-in-effect */
 import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useSelector, useDispatch } from "react-redux";
-import axios from "axios";
+import { updateUserById } from "../../../api/authApi";
 import { setUser } from "../../../redux/userSlice";
+import { ROUTES } from "../../../constants/router";
 import "./profile.scss";
 
 export default function Profile() {
@@ -41,14 +41,11 @@ export default function Profile() {
     setLoading(true);
 
     try {
-      const response = await axios.put(
-        `http://localhost:5000/users/login/${currentUser.id}`,
-        {
-          name,
-          phone,
-          address,
-        },
-      );
+      const response = await updateUserById(currentUser.id, {
+        name,
+        phone,
+        address,
+      });
 
       const updatedUser = response.data.user;
 
@@ -57,7 +54,7 @@ export default function Profile() {
       setSuccess("Cập nhật thông tin thành công!");
 
       setTimeout(() => {
-        navigate("/");
+        navigate(ROUTES.USER.HOME);
       }, 800);
     } catch (error) {
       setError(error.response?.data?.message || "Cập nhật thất bại");
@@ -71,7 +68,7 @@ export default function Profile() {
       <div className="profile-page">
         <div className="profile-card">
           <p>Bạn chưa đăng nhập.</p>
-          <Link to="/login-user" className="profile-link">
+          <Link to={ROUTES.USER.LOGIN_USER} className="profile-link">
             Đăng nhập ngay
           </Link>
         </div>
@@ -141,7 +138,7 @@ export default function Profile() {
         {/* <div className="profile-footer">
           <button
             className="profile-back"
-            onClick={() => navigate("/")}
+            onClick={() => navigate(ROUTES.USER.HOME)}
             type="button"
           >
             ← Quay lại Trang chủ

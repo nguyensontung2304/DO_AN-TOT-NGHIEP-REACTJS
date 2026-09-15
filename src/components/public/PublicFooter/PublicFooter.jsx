@@ -1,19 +1,20 @@
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
-import axios from "axios";
+import { getProducts } from "../../../api/productApi";
+import { ROUTES, getPath } from "../../../constants/router";
 import "./publicFooter.scss";
 
 export default function PublicFooter() {
-  // ── State sản phẩm theo danh mục ──────────────────────────────────────────
+  //  State sản phẩm theo danh mục
   const [products, setProducts] = useState([]);
   const [categories, setCategories] = useState([]);
   const [activeTab, setActiveTab] = useState(null); // danh mục đang mở
 
-  // ── Lấy danh sách sản phẩm từ API khi mount ───────────────────────────────
+  //  Lấy danh sách sản phẩm từ API khi mount
   useEffect(() => {
     const fetchProducts = async () => {
       try {
-        const res = await axios.get("http://localhost:5000/products");
+        const res = await getProducts();
         const data = Array.isArray(res.data) ? res.data : [];
         setProducts(data);
 
@@ -30,14 +31,14 @@ export default function PublicFooter() {
     fetchProducts();
   }, []);
 
-  // ── Sản phẩm thuộc tab đang chọn (tối đa 4 sản phẩm) ────────────────────
+  //  Sản phẩm thuộc tab đang chọn (tối đa 4 sản phẩm)
   const tabProducts = products
     .filter((p) => p.category === activeTab)
     .slice(0, 4);
 
   return (
     <footer className="pub-footer">
-      {/* ── PHẦN TRÊN: PRODUCT SHOWCASE THEO DANH MỤC ────────────────────── */}
+      {/*  PHẦN TRÊN: PRODUCT SHOWCASE THEO DANH MỤC  */}
       {categories.length > 0 && (
         <div className="pub-footer__showcase">
           <div className="pub-footer__showcase-inner">
@@ -67,7 +68,7 @@ export default function PublicFooter() {
                 {tabProducts.map((p) => (
                   <Link
                     key={p.id}
-                    to={`/products/${p.id}`}
+                    to={getPath(ROUTES.USER.PRODUCT_DETAIL, { id: p.id })}
                     className="pub-footer__product-card"
                   >
                     <div className="pub-footer__product-img">{p.emoji}</div>
@@ -82,7 +83,7 @@ export default function PublicFooter() {
 
                 {/* Nút xem tất cả danh mục */}
                 <Link
-                  to="/products"
+                  to={ROUTES.USER.PRODUCT_LIST}
                   className="pub-footer__product-more"
                   state={{ category: activeTab }}
                 >
@@ -95,7 +96,7 @@ export default function PublicFooter() {
         </div>
       )}
 
-      {/* ── PHẦN CHÍNH: 4 CỘT THÔNG TIN ─────────────────────────────────── */}
+      {/*  PHẦN CHÍNH: 4 CỘT THÔNG TIN  */}
       <div className="pub-footer__inner">
         {/* Cột 1: Thương hiệu */}
         <div className="pub-footer__brand">
@@ -120,11 +121,11 @@ export default function PublicFooter() {
         {/* Cột 2: Sản phẩm */}
         <div className="pub-footer__col">
           <h4>Sản phẩm</h4>
-          <Link to="/products">Bàn ăn</Link>
-          <Link to="/products">Ghế sofa</Link>
-          <Link to="/products">Tủ quần áo</Link>
-          <Link to="/products">Kệ sách</Link>
-          <Link to="/products">Giường ngủ</Link>
+          <Link to={ROUTES.USER.PRODUCT_LIST}>Bàn ăn</Link>
+          <Link to={ROUTES.USER.PRODUCT_LIST}>Ghế sofa</Link>
+          <Link to={ROUTES.USER.PRODUCT_LIST}>Tủ quần áo</Link>
+          <Link to={ROUTES.USER.PRODUCT_LIST}>Kệ sách</Link>
+          <Link to={ROUTES.USER.PRODUCT_LIST}>Giường ngủ</Link>
         </div>
 
         {/* Cột 3: Dịch vụ */}
@@ -133,7 +134,7 @@ export default function PublicFooter() {
           <a href="#">Thiết kế nội thất</a>
           <a href="#">Lắp đặt tại nhà</a>
           <a href="#">Bảo hành sản phẩm</a>
-          <Link to="/contact">Tư vấn miễn phí</Link>
+          <Link to={ROUTES.USER.CONTACT}>Tư vấn miễn phí</Link>
         </div>
 
         {/* Cột 4: Liên hệ */}
@@ -146,7 +147,7 @@ export default function PublicFooter() {
         </div>
       </div>
 
-      {/* ── BOTTOM BAR ────────────────────────────────────────────────────── */}
+      {/*  BOTTOM BAR  */}
       <div className="pub-footer__bottom">
         <p>© 2026 Nội Thất Việt. Bảo lưu mọi quyền.</p>
         <div className="pub-footer__bottom-links">

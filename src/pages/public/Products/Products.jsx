@@ -1,25 +1,24 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { useSelector } from "react-redux";
-import axios from "axios";
+import { getProducts, addToCart } from "../../../api";
+import { ROUTES, getPath } from "../../../router";
 import "./products.scss";
 
 const PRODUCTS_PER_PAGE = 12;
 
-// ======================
 // PRODUCT CARD
-// ======================
 function ProductCard({ product }) {
   const currentUser = useSelector((state) => state.user.currentUser);
   const [added, setAdded] = useState(false);
 
   const handleAdd = async () => {
     if (!currentUser?.id) {
-      window.location.href = "/login-user";
+      window.location.href = ROUTES.USER.LOGIN_USER;
       return;
     }
     try {
-      await axios.post("http://localhost:5000/cart", {
+      await addToCart({
         userId: currentUser.id,
         productId: product.id,
         qty: 1,
@@ -43,7 +42,7 @@ function ProductCard({ product }) {
       )}
 
       <Link
-        to={`/products/${product.id}`}
+        to={getPath(ROUTES.USER.PRODUCT_DETAIL, { id: product.id })}
         className="product-card__img"
         aria-label={`Xem chi tiết ${product.name}`}
       >
@@ -54,7 +53,9 @@ function ProductCard({ product }) {
         <span className="product-card__cat">{product.category}</span>
 
         <h3 className="product-card__name">
-          <Link to={`/products/${product.id}`}>{product.name}</Link>
+          <Link to={getPath(ROUTES.USER.PRODUCT_DETAIL, { id: product.id })}>
+            {product.name}
+          </Link>
         </h3>
 
         <p className="product-card__desc">{product.description}</p>
@@ -71,7 +72,7 @@ function ProductCard({ product }) {
 
         <div className="product-card__btns">
           <Link
-            to={`/products/${product.id}`}
+            to={getPath(ROUTES.USER.PRODUCT_DETAIL, { id: product.id })}
             className="product-card__detail-btn"
           >
             Chi tiết
@@ -86,8 +87,8 @@ function ProductCard({ product }) {
             </button>
           ) : (
             <Link
-              to="/login-user"
-              state={{ from: "/products" }}
+              to={ROUTES.USER.LOGIN_USER}
+              state={{ from: ROUTES.USER.PRODUCT_LIST }}
               className="product-card__btn product-card__btn--guest"
             >
               🔒 Đăng nhập
@@ -99,9 +100,7 @@ function ProductCard({ product }) {
   );
 }
 
-// ======================
 // PRODUCTS PAGE
-// ======================
 export default function Products() {
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -112,15 +111,13 @@ export default function Products() {
   const [sortBy, setSortBy] = useState("default");
   const [currentPage, setCurrentPage] = useState(1);
 
-  // ======================
   // GET PRODUCTS
-  // ======================
   useEffect(() => {
-    const getProducts = async () => {
+    const fetchProducts = async () => {
       try {
         setLoading(true);
         setError("");
-        const response = await axios.get("http://localhost:5000/products");
+        const response = await getProducts();
         setProducts(response.data);
       } catch (error) {
         console.error("Lỗi lấy sản phẩm:", error);
@@ -129,25 +126,21 @@ export default function Products() {
         setLoading(false);
       }
     };
-    getProducts();
+    fetchProducts();
   }, []);
 
-  // ── Reset về trang 1 khi filter / search / sort thay đổi ─────────────────
+  //  Reset về trang 1 khi filter / search / sort thay đổi
   useEffect(() => {
     setCurrentPage(1);
   }, [activeCategory, search, sortBy]);
 
-  // ======================
   // CATEGORY
-  // ======================
   const categories = [
     "Tất cả",
     ...new Set(products.map((product) => product.category).filter(Boolean)),
   ];
 
-  // ======================
   // FILTER
-  // ======================
   let filtered = products.filter((item) => {
     const matchCategory =
       activeCategory === "Tất cả" || item.category === activeCategory;
@@ -158,9 +151,7 @@ export default function Products() {
     return matchCategory && matchSearch;
   });
 
-  // ======================
   // SORT
-  // ======================
   if (sortBy === "price-asc") {
     filtered = [...filtered].sort((a, b) => Number(a.price) - Number(b.price));
   }
@@ -171,9 +162,7 @@ export default function Products() {
     filtered = [...filtered].sort((a, b) => a.name.localeCompare(b.name, "vi"));
   }
 
-  // ======================
   // PHÂN TRANG
-  // ======================
   const totalPages = Math.ceil(filtered.length / PRODUCTS_PER_PAGE);
   const paginated = filtered.slice(
     (currentPage - 1) * PRODUCTS_PER_PAGE,
@@ -204,9 +193,7 @@ export default function Products() {
     return pages;
   };
 
-  // ======================
   // LOADING
-  // ======================
   if (loading) {
     return (
       <div className="products-page">
@@ -220,9 +207,7 @@ export default function Products() {
     );
   }
 
-  // ======================
   // ERROR
-  // ======================
   if (error) {
     return (
       <div className="products-page">
@@ -280,7 +265,8 @@ export default function Products() {
             const count =
               category === "Tất cả"
                 ? products.length
-                : products.filter((product) => product.category === category).length;
+                : products.filter((product) => product.category === category)
+                    .length;
             return (
               <button
                 key={category}
@@ -299,8 +285,8 @@ export default function Products() {
           {filtered.length === 0
             ? "Không có sản phẩm nào"
             : filtered.length === products.length
-            ? `Hiển thị ${paginated.length} / ${products.length} sản phẩm — Trang ${currentPage}/${totalPages}`
-            : `${filtered.length} sản phẩm${search ? ` cho "${search}"` : ""} — Trang ${currentPage}/${totalPages || 1}`}
+              ? `Hiển thị ${paginated.length} / ${products.length} sản phẩm — Trang ${currentPage}/${totalPages}`
+              : `${filtered.length} sản phẩm${search ? ` cho "${search}"` : ""} — Trang ${currentPage}/${totalPages || 1}`}
         </p>
 
         {/* Empty */}
@@ -340,7 +326,10 @@ export default function Products() {
 
                 {getPageNumbers().map((page, idx) =>
                   page === "..." ? (
-                    <span key={`ellipsis-${idx}`} className="pagination__ellipsis">
+                    <span
+                      key={`ellipsis-${idx}`}
+                      className="pagination__ellipsis"
+                    >
                       …
                     </span>
                   ) : (

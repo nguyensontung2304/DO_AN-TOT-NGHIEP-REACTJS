@@ -1,9 +1,9 @@
-/* eslint-disable react-hooks/set-state-in-effect */
 import { useRef, useState, useEffect, useCallback } from "react";
 import { Link, NavLink, useNavigate } from "react-router-dom";
 import { useSelector, useDispatch } from "react-redux";
 import { clearUser } from "../../../redux/userSlice";
-import axios from "axios";
+import { getCartByUserId } from "../../../api/cartApi";
+import { ROUTES } from "../../../constants/router.js";
 
 import "./publicHeader.scss";
 
@@ -25,9 +25,7 @@ export default function PublicHeader() {
     }
 
     try {
-      const response = await axios.get(
-        `http://localhost:5000/cart/${currentUser.id}`,
-      );
+      const response = await getCartByUserId(currentUser.id);
 
       const cartData = Array.isArray(response.data) ? response.data : [];
 
@@ -42,16 +40,12 @@ export default function PublicHeader() {
     }
   }, [currentUser]);
 
-  // =====================================================
   // KHI USER THAY ĐỔI → CẬP NHẬT CART
-  // =====================================================
   useEffect(() => {
     getCartCount();
   }, [getCartCount]);
 
-  // =====================================================
   // CART THAY ĐỔI
-  // =====================================================
   useEffect(() => {
     const handleCartUpdated = () => {
       getCartCount();
@@ -64,9 +58,7 @@ export default function PublicHeader() {
     };
   }, [getCartCount]);
 
-  // =====================================================
   // ĐÓNG DROPDOWN KHI CLICK RA NGOÀI
-  // =====================================================
   useEffect(() => {
     const handler = (e) => {
       if (dropdownRef.current && !dropdownRef.current.contains(e.target)) {
@@ -81,9 +73,7 @@ export default function PublicHeader() {
     };
   }, []);
 
-  // =====================================================
   // ĐĂNG XUẤT
-  // =====================================================
   const handleLogout = () => {
     localStorage.removeItem("userId");
 
@@ -93,14 +83,13 @@ export default function PublicHeader() {
 
     setUserDropdown(false);
 
-    navigate("/");
+    navigate(ROUTES.USER.HOME);
   };
 
   return (
     <header className="pub-header">
       <div className="pub-header__inner">
-        {/* LOGO */}
-        <Link to="/" className="pub-header__logo">
+        <Link to={ROUTES.USER.HOME} className="pub-header__logo">
           <span>🛋️</span>
 
           <span>
@@ -108,33 +97,32 @@ export default function PublicHeader() {
             <em> Việt</em>
           </span>
         </Link>
-
-        {/* NAVIGATION */}
         <nav className={`pub-header__nav ${menuOpen ? "open" : ""}`}>
-          <NavLink to="/" end onClick={() => setMenuOpen(false)}>
+          <NavLink to={ROUTES.USER.HOME} end onClick={() => setMenuOpen(false)}>
             Trang chủ
           </NavLink>
 
-          <NavLink to="/products" onClick={() => setMenuOpen(false)}>
+          <NavLink
+            to={ROUTES.USER.PRODUCT_LIST}
+            onClick={() => setMenuOpen(false)}
+          >
             Sản phẩm
           </NavLink>
 
-          <NavLink to="/about" onClick={() => setMenuOpen(false)}>
+          <NavLink to={ROUTES.USER.ABOUT} onClick={() => setMenuOpen(false)}>
             Giới thiệu
           </NavLink>
 
-          <NavLink to="/contact" onClick={() => setMenuOpen(false)}>
+          <NavLink to={ROUTES.USER.CONTACT} onClick={() => setMenuOpen(false)}>
             Liên hệ
           </NavLink>
         </nav>
 
-        {/* ACTIONS */}
         <div className="pub-header__actions">
-          {/* CART */}
           <button
             className="pub-header__cart"
             aria-label={`Giỏ hàng (${cartCount})`}
-            onClick={() => navigate("/cart")}
+            onClick={() => navigate(ROUTES.USER.CART)}
           >
             🛒
             {cartCount > 0 && (
@@ -142,14 +130,12 @@ export default function PublicHeader() {
             )}
           </button>
 
-          {/* CHƯA ĐĂNG NHẬP */}
           {!currentUser && (
-            <Link to="/login-user" className="pub-header__login-btn">
+            <Link to={ROUTES.USER.LOGIN_USER} className="pub-header__login-btn">
               Đăng nhập
             </Link>
           )}
 
-          {/* ĐÃ ĐĂNG NHẬP */}
           {currentUser && (
             <div className="pub-header__user" ref={dropdownRef}>
               <button
@@ -178,7 +164,7 @@ export default function PublicHeader() {
                   <div className="pub-header__dropdown-divider" />
 
                   <Link
-                    to="/profile"
+                    to={ROUTES.USER.PROFILE}
                     className="pub-header__dropdown-item"
                     onClick={() => setUserDropdown(false)}
                   >
@@ -196,16 +182,14 @@ export default function PublicHeader() {
             </div>
           )}
 
-          {/* ADMIN */}
           <Link
-            to="/login-admin"
+            to={ROUTES.USER.LOGIN_ADMIN}
             className="pub-header__admin-btn"
             title="Quản trị"
           >
             🏭
           </Link>
 
-          {/* BURGER */}
           <button
             className="pub-header__burger"
             aria-label="Menu"
